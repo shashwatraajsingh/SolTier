@@ -8,7 +8,7 @@ const NETWORK = "https://api.testnet.solana.com";
 const PROGRAM_ID = new PublicKey("11111111111111111111111111111111"); // Update after deployment
 
 async function main() {
-    console.log("🧪 ReachPay Campaign Flow Test\n");
+    console.log("[TEST] ReachPay Campaign Flow Test\n");
 
     // Setup connection
     const connection = new Connection(NETWORK, "confirmed");
@@ -31,21 +31,21 @@ async function main() {
     console.log(`Oracle: ${oracle.publicKey.toString()}\n`);
 
     // Airdrop SOL for testing
-    console.log("💰 Airdropping SOL to test accounts...");
+    console.log("[AIRDROP] Airdropping SOL to test accounts...");
     try {
         const brandAirdrop = await connection.requestAirdrop(brand.publicKey, 2 * 1e9);
         await connection.confirmTransaction(brandAirdrop);
-        console.log(`  ✅ Brand airdrop confirmed`);
+        console.log(`  [OK] Brand airdrop confirmed`);
 
         const creatorAirdrop = await connection.requestAirdrop(creator.publicKey, 2 * 1e9);
         await connection.confirmTransaction(creatorAirdrop);
-        console.log(`  ✅ Creator airdrop confirmed\n`);
+        console.log(`  [OK] Creator airdrop confirmed\n`);
     } catch (error) {
-        console.error(`  ⚠️  Airdrop failed (testnet might be congested): ${error.message}\n`);
+        console.error(`  [WARNING]  Airdrop failed (testnet might be congested): ${error.message}\n`);
     }
 
     // Create mock USDC token (testnet)
-    console.log("🪙 Creating mock USDC token...");
+    console.log("[TOKEN] Creating mock USDC token...");
     const mintAuthority = payer;
     const mint = await createMint(
         connection,
@@ -57,7 +57,7 @@ async function main() {
     console.log(`  Mock USDC Mint: ${mint.toString()}\n`);
 
     // Create token accounts
-    console.log("📦 Creating token accounts...");
+    console.log("[CREATE] Creating token accounts...");
     const brandTokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
         payer,
@@ -75,7 +75,7 @@ async function main() {
     console.log(`  Creator Token Account: ${creatorTokenAccount.address.toString()}\n`);
 
     // Mint tokens to brand (1,000,000 USDC = 1,000,000,000,000 lamports)
-    console.log("💵 Minting tokens to brand...");
+    console.log("[MINT] Minting tokens to brand...");
     await mintTo(
         connection,
         payer,
@@ -84,7 +84,7 @@ async function main() {
         mintAuthority,
         1000000 * 1e6 // 1M USDC
     );
-    console.log(`  ✅ Minted 1,000,000 USDC to brand\n`);
+    console.log(`  [OK] Minted 1,000,000 USDC to brand\n`);
 
     // Load program
     const idlPath = path.join(__dirname, "../target/idl/reachpay_solana.json");
@@ -96,7 +96,7 @@ async function main() {
 
     // Generate campaign ID
     const campaignId = Keypair.generate().publicKey;
-    console.log(`📋 Campaign ID: ${campaignId.toString()}\n`);
+    console.log(`[INFO] Campaign ID: ${campaignId.toString()}\n`);
 
     // Derive PDAs
     const [campaignPDA] = await PublicKey.findProgramAddress(
@@ -119,15 +119,15 @@ async function main() {
     const startTime = new anchor.BN(Math.floor(Date.now() / 1000));
     const endTime = new anchor.BN(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60); // 30 days
 
-    console.log("📝 Campaign Parameters:");
+    console.log("[PARAMS] Campaign Parameters:");
     console.log(`  CPM: $${cpm.toNumber() / 1e6}`);
     console.log(`  Like Weight: ${likeWeight.toString()}`);
     console.log(`  Max Budget: $${maxBudget.toNumber() / 1e6}`);
     console.log(`  Duration: 30 days\n`);
 
-    console.log("═══════════════════════════════════════════════════════");
+    console.log("=======================================================");
     console.log("Step 1: Brand Creates Campaign");
-    console.log("═══════════════════════════════════════════════════════\n");
+    console.log("=======================================================\n");
 
     try {
         const tx = await program.methods
@@ -153,15 +153,15 @@ async function main() {
             .signers([brand])
             .rpc();
 
-        console.log(`✅ Campaign created! Transaction: ${tx}\n`);
+        console.log(`[OK] Campaign created! Transaction: ${tx}\n`);
     } catch (error) {
-        console.error(`❌ Error creating campaign: ${error.message}`);
+        console.error(`[ERROR] Error creating campaign: ${error.message}`);
         console.error(`   This is expected if the program is not deployed yet.\n`);
     }
 
-    console.log("═══════════════════════════════════════════════════════");
+    console.log("=======================================================");
     console.log("Step 2: Creator Accepts Campaign");
-    console.log("═══════════════════════════════════════════════════════\n");
+    console.log("=======================================================\n");
 
     try {
         const tx = await program.methods
@@ -173,14 +173,14 @@ async function main() {
             .signers([creator])
             .rpc();
 
-        console.log(`✅ Campaign accepted! Transaction: ${tx}\n`);
+        console.log(`[OK] Campaign accepted! Transaction: ${tx}\n`);
     } catch (error) {
-        console.error(`❌ Error accepting campaign: ${error.message}\n`);
+        console.error(`[ERROR] Error accepting campaign: ${error.message}\n`);
     }
 
-    console.log("═══════════════════════════════════════════════════════");
+    console.log("=======================================================");
     console.log("Step 3: Oracle Updates Metrics");
-    console.log("═══════════════════════════════════════════════════════\n");
+    console.log("=======================================================\n");
 
     const views = new anchor.BN(50000);
     const likes = new anchor.BN(2500);
@@ -200,14 +200,14 @@ async function main() {
             .signers([oracle])
             .rpc();
 
-        console.log(`✅ Metrics updated! Transaction: ${tx}\n`);
+        console.log(`[OK] Metrics updated! Transaction: ${tx}\n`);
     } catch (error) {
-        console.error(`❌ Error updating metrics: ${error.message}\n`);
+        console.error(`[ERROR] Error updating metrics: ${error.message}\n`);
     }
 
-    console.log("═══════════════════════════════════════════════════════");
+    console.log("=======================================================");
     console.log("Step 4: Settle Payout");
-    console.log("═══════════════════════════════════════════════════════\n");
+    console.log("=======================================================\n");
 
     const effectiveViews = views.toNumber() + (likes.toNumber() * likeWeight.toNumber());
     const expectedPayout = Math.floor(effectiveViews / 1000) * (cpm.toNumber() / 1e6);
@@ -224,21 +224,21 @@ async function main() {
             })
             .rpc();
 
-        console.log(`✅ Payout settled! Transaction: ${tx}\n`);
+        console.log(`[OK] Payout settled! Transaction: ${tx}\n`);
     } catch (error) {
-        console.error(`❌ Error settling payout: ${error.message}\n`);
+        console.error(`[ERROR] Error settling payout: ${error.message}\n`);
     }
 
-    console.log("═══════════════════════════════════════════════════════");
-    console.log("✅ Test Flow Complete!");
-    console.log("═══════════════════════════════════════════════════════\n");
+    console.log("=======================================================");
+    console.log("[OK] Test Flow Complete!");
+    console.log("=======================================================\n");
 
-    console.log("📊 Summary:");
+    console.log("[DATA] Summary:");
     console.log(`  Campaign ID: ${campaignId.toString()}`);
     console.log(`  Mock USDC Mint: ${mint.toString()}`);
     console.log(`  Brand: ${brand.publicKey.toString()}`);
     console.log(`  Creator: ${creator.publicKey.toString()}`);
-    console.log(`\n💡 To continue testing:`);
+    console.log(`\n[TIP] To continue testing:`);
     console.log(`  1. Deploy the program to testnet`);
     console.log(`  2. Update PROGRAM_ID in this script`);
     console.log(`  3. Run: node test-flow.js`);

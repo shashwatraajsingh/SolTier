@@ -1,17 +1,17 @@
 # ReachPay Quick Reference
 
-## 🚀 Quick Start Commands
+## Quick Start Commands
 
 ### First Time Setup
 ```bash
-# 1. Deploy smart contract
+# Step 1: Deploy smart contract
 ./deploy.sh
 
-# 2. Copy program ID from output and update:
+# Step 2: Copy program ID from output and update:
 #    - backend/oracle.js (line 9)
 #    - backend/test-flow.js (line 8)
 
-# 3. Run test flow
+# Step 3: Run test flow
 cd backend
 npm test
 ```
@@ -38,7 +38,7 @@ cd backend
 node oracle.js update CAMPAIGN_ID 50000 2500
 ```
 
-## 📋 Common Tasks
+## Common Tasks
 
 ### Check Wallet Balance
 ```bash
@@ -75,7 +75,7 @@ cargo build-sbf
 solana program deploy target/deploy/reachpay_solana.so
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Program Not Building
 ```bash
@@ -92,7 +92,7 @@ solana config set --url https://api.devnet.solana.com
 solana airdrop 2
 ```
 
-### Oracle Can't Update
+### Oracle Cannot Update
 - Check oracle keypair path in .env
 - Verify program ID matches deployed program
 - Ensure campaign is active
@@ -106,7 +106,7 @@ lsof -i :3001
 npm start
 ```
 
-## 📊 Example Campaign
+## Example Campaign
 
 ```javascript
 // Campaign parameters
@@ -124,7 +124,7 @@ Effective Views = 50,000 + (20 × 2,500) = 100,000
 Payout = (100,000 / 1000) × $10 = $1,000
 ```
 
-## 🌐 Important URLs
+## Important URLs
 
 ### Testnet
 - RPC: https://api.testnet.solana.com
@@ -135,7 +135,7 @@ Payout = (100,000 / 1000) × $10 = $1,000
 - API: http://localhost:3001
 - Health: http://localhost:3001/health
 
-## 📁 Key Files
+## Key Files
 
 ```
 programs/reachpay-solana/src/lib.rs  # Smart contract
@@ -146,15 +146,15 @@ backend/.env                          # Configuration
 deploy.sh                             # Deployment script
 ```
 
-## 💡 Tips
+## Tips
 
-1. **Save Program ID**: After deployment, save the program ID
-2. **Monitor Logs**: Use `solana logs` to debug transactions
-3. **Test on Devnet First**: Less congested than testnet
-4. **Keep Keypairs Safe**: Never commit id.json files
-5. **Check Explorer**: Verify all transactions on explorer
+1. Save Program ID: After deployment, save the program ID
+2. Monitor Logs: Use 'solana logs' to debug transactions
+3. Test on Devnet First: Less congested than testnet
+4. Keep Keypairs Safe: Never commit id.json files
+5. Check Explorer: Verify all transactions on explorer
 
-## 🆘 Emergency Commands
+## Emergency Commands
 
 ### Stop Oracle
 ```bash
@@ -181,4 +181,4 @@ solana program show PROGRAM_ID
 
 ---
 
-**Need Help?** Check ARCHITECTURE.md for detailed docs
+For detailed documentation, see ARCHITECTURE.md

@@ -100,11 +100,11 @@ class ReachPayOracle {
                 })
                 .rpc();
 
-            console.log(`✅ Metrics updated. Transaction: ${tx}`);
+            console.log(`[SUCCESS] Metrics updated. Transaction: ${tx}`);
 
             return { success: true, tx };
         } catch (error) {
-            console.error(`❌ Error updating metrics: ${error.message}`);
+            console.error(`[ERROR] Error updating metrics: ${error.message}`);
             return { success: false, error: error.message };
         }
     }
@@ -133,11 +133,11 @@ class ReachPayOracle {
                 })
                 .rpc();
 
-            console.log(`✅ Payout settled. Transaction: ${tx}`);
+            console.log(`[SUCCESS] Payout settled. Transaction: ${tx}`);
 
             return { success: true, tx };
         } catch (error) {
-            console.error(`❌ Error settling payout: ${error.message}`);
+            console.error(`[ERROR] Error settling payout: ${error.message}`);
             return { success: false, error: error.message };
         }
     }

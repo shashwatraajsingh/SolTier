@@ -107,7 +107,7 @@ app.post("/wallet/verify", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 ReachPay Oracle API running on port ${PORT}`);
-    console.log(`   Network: ${process.env.SOLANA_NETWORK || "testnet"}`);
-    console.log(`   Oracle: ${oracle.oracleKeypair.publicKey.toString()}`);
+    console.log(`ReachPay Oracle API running on port ${PORT}`);
+    console.log(`Network: ${process.env.SOLANA_NETWORK || "testnet"}`);
+    console.log(`Oracle: ${oracle.oracleKeypair.publicKey.toString()}`);
 });
