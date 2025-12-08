@@ -4,7 +4,7 @@
 
 set -e
 
-echo "[DEPLOY] ReachPay Solana Deployment Script"
+echo "[DEPLOY] SolTier Solana Deployment Script"
 echo "======================================"
 echo ""
 
@@ -50,7 +50,7 @@ echo "[OK] Build complete"
 echo ""
 
 # Get program ID
-PROGRAM_KEYPAIR="target/deploy/reachpay_solana-keypair.json"
+PROGRAM_KEYPAIR="target/deploy/soltier_solana-keypair.json"
 if [ ! -f "$PROGRAM_KEYPAIR" ]; then
     echo "[ERROR] Program keypair not found at $PROGRAM_KEYPAIR"
     exit 1
@@ -62,7 +62,7 @@ echo ""
 
 # Update lib.rs with program ID
 echo "[UPDATE] Updating program ID in source code..."
-sed -i "s/declare_id!(\".*\");/declare_id!(\"$PROGRAM_ID\");/" programs/reachpay-solana/src/lib.rs
+sed -i "s/declare_id!(\".*\");/declare_id!(\"$PROGRAM_ID\");/" programs/soltier-solana/src/lib.rs
 echo "[OK] Updated lib.rs"
 echo ""
 
@@ -74,7 +74,7 @@ echo ""
 
 # Deploy
 echo "[DEPLOY] Deploying to testnet..."
-solana program deploy target/deploy/reachpay_solana.so
+solana program deploy target/deploy/soltier_solana.so
 
 if [ $? -eq 0 ]; then
     echo ""

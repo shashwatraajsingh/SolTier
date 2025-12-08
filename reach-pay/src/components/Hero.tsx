@@ -14,11 +14,11 @@ export default function Hero() {
                 <div className="text-lg mb-6 space-y-2">
                     <p>Flat fees are broken. Posts flop? Brands lose.</p>
                     <p>Posts overperform? Creators lose.</p>
-                    <p>ReachPay fixes that — you get <span className="marker-underline">paid per 1,000 views</span>, with <span className="marker-underline">engagement bonuses</span>.</p>
+                    <p>SolTier fixes that — you get <span className="marker-underline">paid per 1,000 views</span>, with <span className="marker-underline">engagement bonuses</span>.</p>
                     <p className="text-sm mt-2 text-gray-600">Settled on Solana</p>
                 </div>
                 <div className="flex gap-4 items-center">
-                    <button className="sketch-button">Join the waitlist</button>
+
                     <button className="sketch-button secondary flex items-center gap-2">
                         See how it works <ArrowRight size={20} />
                     </button>

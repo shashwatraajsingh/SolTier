@@ -1,0 +1,215 @@
+import axios from "axios";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+export const api = axios.create({
+    baseURL: API_URL,
+    headers: {
+        "Content-Type": "application/json",
+    },
+});
+
+// Types
+export interface Campaign {
+    campaignId: string;
+    brand: string;
+    title: string;
+    description: string;
+    cpm: number;
+    likeWeight: number;
+    maxBudget: number;
+    escrowBalance: number;
+    views: number;
+    likes: number;
+    effectiveViews: number;
+    totalPaid: number;
+    remainingPayout: number;
+    isActive: boolean;
+    startTime: string;
+    endTime: string;
+}
+
+export interface User {
+    walletAddress: string;
+    role: "creator" | "brand";
+    xConnected?: boolean;
+    xUsername?: string;
+    balance?: number;
+}
+
+export interface Creator {
+    walletAddress: string;
+    xUsername: string;
+    reach: number;
+    engagement: string;
+    completedCampaigns: number;
+}
+
+export interface Application {
+    applicationId: string;
+    campaignId: string;
+    creatorAddress: string;
+    proposedContent: string;
+    status: "pending" | "approved" | "rejected";
+    createdAt: string;
+}
+
+// ============= USER API =============
+
+export const registerUser = async (walletAddress: string, role: "creator" | "brand"): Promise<User> => {
+    const response = await api.post<{ success: boolean; data: User }>("/api/user/register", {
+        walletAddress,
+        role,
+    });
+    return response.data.data;
+};
+
+export const getUser = async (walletAddress: string): Promise<User> => {
+    const response = await api.get<{ success: boolean; data: User }>(`/api/user/${walletAddress}`);
+    return response.data.data;
+};
+
+// ============= X (TWITTER) API =============
+
+export const connectX = async (walletAddress: string, username: string) => {
+    const response = await api.post("/api/x/connect", {
+        walletAddress,
+        username,
+    });
+    return response.data;
+};
+
+export const disconnectX = async (walletAddress: string) => {
+    const response = await api.post("/api/x/disconnect", {
+        walletAddress,
+    });
+    return response.data;
+};
+
+export const getXStatus = async (walletAddress: string) => {
+    const response = await api.get(`/api/x/status/${walletAddress}`);
+    return response.data;
+};
+
+// ============= CAMPAIGN API =============
+
+export const createCampaign = async (data: {
+    walletAddress: string;
+    cpm: number;
+    likeWeight: number;
+    maxBudget: number;
+    durationDays: number;
+    title?: string;
+    description?: string;
+}): Promise<Campaign> => {
+    const response = await api.post<{ success: boolean; data: Campaign }>("/api/campaign/create", data);
+    return response.data.data;
+};
+
+export const getCampaignStatus = async (id: string): Promise<Campaign> => {
+    const response = await api.get<{ success: boolean; data: Campaign }>(
+        `/api/campaign/${id}/status`
+    );
+    return response.data.data;
+};
+
+export const getActiveCampaigns = async (): Promise<Campaign[]> => {
+    const response = await api.get<{ success: boolean; data: Campaign[] }>("/api/campaigns/active");
+    return response.data.data;
+};
+
+export const getBrandCampaigns = async (walletAddress: string): Promise<Campaign[]> => {
+    const response = await api.get<{ success: boolean; data: Campaign[] }>(
+        `/api/campaigns/brand/${walletAddress}`
+    );
+    return response.data.data;
+};
+
+export const applyToCampaign = async (campaignId: string, walletAddress: string, proposedContent?: string): Promise<Application> => {
+    const response = await api.post<{ success: boolean; data: Application }>(
+        `/api/campaign/${campaignId}/apply`,
+        {
+            walletAddress,
+            proposedContent,
+        }
+    );
+    return response.data.data;
+};
+
+export const getCampaignApplications = async (campaignId: string): Promise<Application[]> => {
+    const response = await api.get<{ success: boolean; data: Application[] }>(
+        `/api/campaign/${campaignId}/applications`
+    );
+    return response.data.data;
+};
+
+export const updateApplicationStatus = async (
+    applicationId: string,
+    walletAddress: string,
+    status: "pending" | "approved" | "rejected"
+) => {
+    const response = await api.put(`/api/application/${applicationId}/status`, {
+        status,
+        walletAddress,
+    });
+    return response.data;
+};
+
+// ============= CREATOR API =============
+
+export const getTopCreators = async (limit: number = 10): Promise<Creator[]> => {
+    const response = await api.get<{ success: boolean; data: Creator[] }>(
+        `/api/creators/top?limit=${limit}`
+    );
+    return response.data.data;
+};
+
+// ============= BALANCE API =============
+
+export const addFunds = async (walletAddress: string, amount: number) => {
+    const response = await api.post("/api/balance/add", {
+        walletAddress,
+        amount,
+    });
+    return response.data;
+};
+
+export const getBalance = async (walletAddress: string): Promise<number> => {
+    const response = await api.get<{ success: boolean; data: { balance: number } }>(
+        `/api/balance/${walletAddress}`
+    );
+    return response.data.data.balance;
+};
+
+// ============= METRICS API =============
+
+export interface MetricsUpdate {
+    campaignId: string;
+    views: number;
+    likes: number;
+}
+
+export const updateMetrics = async (data: MetricsUpdate) => {
+    const response = await api.post("/api/metrics/update", data);
+    return response.data;
+};
+
+export const settlePayout = async (id: string, creatorTokenAccount: string) => {
+    const response = await api.post(`/api/campaign/${id}/settle`, {
+        creatorTokenAccount,
+    });
+    return response.data;
+};
+
+export const verifyWallet = async (
+    publicKey: string,
+    signature: string,
+    message: string
+) => {
+    const response = await api.post("/api/wallet/verify", {
+        publicKey,
+        signature,
+        message,
+    });
+    return response.data;
+};

@@ -10,7 +10,7 @@ const NETWORK = process.env.SOLANA_NETWORK || "testnet";
 const PROGRAM_ID = new PublicKey("11111111111111111111111111111111"); // Replace with deployed program ID
 const ORACLE_KEYPAIR_PATH = process.env.ORACLE_KEYPAIR_PATH || path.join(process.env.HOME, ".config/solana/id.json");
 
-class ReachPayOracle {
+class SolTierOracle {
     constructor() {
         this.connection = new Connection(
             NETWORK === "mainnet" ? clusterApiUrl("mainnet-beta") : "https://api.testnet.solana.com",
@@ -271,4 +271,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = ReachPayOracle;
+module.exports = SolTierOracle;

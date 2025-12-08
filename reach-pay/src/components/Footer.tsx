@@ -5,7 +5,7 @@ export default function Footer() {
         <footer className="container py-12 border-t-2 border-dashed border-gray-300 mt-12">
             <div className="flex justify-between items-center">
                 <div>
-                    <div className="text-xl font-bold mb-2">ReachPay</div>
+                    <div className="text-xl font-bold mb-2">SolTier</div>
                     <p className="text-gray-500">Built by founders tired of guessing ROI</p>
                 </div>
                 <div className="flex gap-6 text-gray-600">

@@ -8,7 +8,7 @@ const NETWORK = "https://api.testnet.solana.com";
 const PROGRAM_ID = new PublicKey("11111111111111111111111111111111"); // Update after deployment
 
 async function main() {
-    console.log("[TEST] ReachPay Campaign Flow Test\n");
+    console.log("[TEST] SolTier Campaign Flow Test\n");
 
     // Setup connection
     const connection = new Connection(NETWORK, "confirmed");
@@ -241,7 +241,7 @@ async function main() {
     console.log(`\n[TIP] To continue testing:`);
     console.log(`  1. Deploy the program to testnet`);
     console.log(`  2. Update PROGRAM_ID in this script`);
-    console.log(`  3. Run: node test-flow.js`);
+    console.log("🧪 Starting SolTier Test Flow...");
 }
 
 main().catch(console.error);

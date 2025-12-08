@@ -4,7 +4,7 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 declare_id!("11111111111111111111111111111111");
 
 #[program]
-pub mod reachpay_solana {
+pub mod soltier_solana {
     use super::*;
 
     /// Brand creates a new campaign and deposits USDC into escrow
