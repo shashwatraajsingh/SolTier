@@ -156,7 +156,7 @@ export const CreateCampaignForm = ({ onSuccess }: CreateCampaignFormProps) => {
                 disabled={loading}
                 className="w-full py-4 bg-[#2a2a2a] text-white font-patrick text-xl border-2 border-black hover:bg-[#3a3a3a] transition-all disabled:opacity-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-[0px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
             >
-                {loading ? "Creating..." : "Launch Campaign 🚀"}
+                {loading ? "Creating..." : "Launch Campaign "}
             </button>
         </form>
     );

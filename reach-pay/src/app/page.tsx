@@ -25,10 +25,13 @@ import {
 } from "@/lib/api";
 import toast from "react-hot-toast";
 
+import { useUser } from "@/context/UserContext";
+
 export default function Home() {
   const { connected, publicKey } = useWallet();
+  const { userRole, setUserRole } = useUser();
   const [showDemo, setShowDemo] = useState(false);
-  const [userRole, setUserRole] = useState<"creator" | "brand" | null>(null);
+  // const [userRole, setUserRole] = useState<"creator" | "brand" | null>(null); // Removed local state
   const [isXConnected, setIsXConnected] = useState(false);
   const [xUsername, setXUsername] = useState("");
   const [balance, setBalance] = useState(0);
@@ -176,7 +179,7 @@ export default function Home() {
       />
 
       <div className="relative z-10">
-        <Navbar userRole={userRole} />
+        <Navbar />
 
         {!connected && !showDemo ? (
           <>

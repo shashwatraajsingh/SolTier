@@ -1,11 +1,12 @@
+"use client";
+
 import { WalletButton } from "./WalletButton";
 import Link from "next/link";
+import { useUser } from "@/context/UserContext";
 
-interface NavbarProps {
-    userRole?: "creator" | "brand" | null;
-}
+export default function Navbar() {
+    const { userRole } = useUser();
 
-export default function Navbar({ userRole }: NavbarProps) {
     return (
         <nav className="w-full px-6 py-4 border-b-2 border-black bg-white sticky top-0 z-50">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -17,27 +18,27 @@ export default function Navbar({ userRole }: NavbarProps) {
                 <div className="hidden md:flex items-center gap-8 font-patrick text-lg">
                     {!userRole && (
                         <>
-                            <Link href="#how-it-works" className="hover:underline decoration-2 underline-offset-4">How it works</Link>
-                            <Link href="#pricing" className="hover:underline decoration-2 underline-offset-4">Pricing</Link>
-                            <Link href="#creators" className="hover:underline decoration-2 underline-offset-4">Creators</Link>
-                            <Link href="#brands" className="hover:underline decoration-2 underline-offset-4">Brands</Link>
+                            <Link href="/how-it-works" className="hover:underline decoration-2 underline-offset-4">How it works</Link>
+                            <Link href="/pricing" className="hover:underline decoration-2 underline-offset-4">Pricing</Link>
+                            <Link href="/creators" className="hover:underline decoration-2 underline-offset-4">Creators</Link>
+                            <Link href="/brands" className="hover:underline decoration-2 underline-offset-4">Brands</Link>
                         </>
                     )}
 
                     {userRole === "creator" && (
                         <>
-                            <Link href="#how-it-works" className="hover:underline decoration-2 underline-offset-4">How it works</Link>
-                            <Link href="#brands" className="hover:underline decoration-2 underline-offset-4">Brands</Link>
-                            <Link href="#about" className="hover:underline decoration-2 underline-offset-4">About Us</Link>
-                            <Link href="#dashboard" className="hover:underline decoration-2 underline-offset-4">Dashboard</Link>
+                            <Link href="/how-it-works" className="hover:underline decoration-2 underline-offset-4">How it works</Link>
+                            <Link href="/brands" className="hover:underline decoration-2 underline-offset-4">Brands</Link>
+                            <Link href="/about" className="hover:underline decoration-2 underline-offset-4">About Us</Link>
+                            <Link href="/" className="hover:underline decoration-2 underline-offset-4">Dashboard</Link>
                         </>
                     )}
 
                     {userRole === "brand" && (
                         <>
-                            <Link href="#creators" className="hover:underline decoration-2 underline-offset-4">Creators</Link>
-                            <Link href="#campaigns" className="hover:underline decoration-2 underline-offset-4">Campaigns</Link>
-                            <Link href="#about" className="hover:underline decoration-2 underline-offset-4">About Us</Link>
+                            <Link href="/creators" className="hover:underline decoration-2 underline-offset-4">Creators</Link>
+                            <Link href="/" className="hover:underline decoration-2 underline-offset-4">Campaigns</Link>
+                            <Link href="/about" className="hover:underline decoration-2 underline-offset-4">About Us</Link>
                         </>
                     )}
                 </div>
