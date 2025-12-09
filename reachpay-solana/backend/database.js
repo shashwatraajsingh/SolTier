@@ -4,7 +4,7 @@
  */
 
 const { Keypair } = require('@solana/web3.js');
-const bs58 = require('bs58');
+const { encode: bs58Encode } = require('bs58');
 
 class Database {
     constructor() {
@@ -41,7 +41,7 @@ class Database {
             const brandKeypair = Keypair.generate();
             this.brandWallets.set(walletAddress, {
                 publicKey: brandKeypair.publicKey.toString(),
-                secretKey: bs58.encode(brandKeypair.secretKey),
+                secretKey: bs58Encode(brandKeypair.secretKey),
             });
             user.brandWalletAddress = brandKeypair.publicKey.toString();
         }
