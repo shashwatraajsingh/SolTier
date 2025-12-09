@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
+  // Add Turbopack config to silence Next.js 16 warning
+  // Most apps work fine with Turbopack without configuration
+  turbopack: {
+    root: process.cwd(), // Use current working directory as root
+  },
 };
 
 export default nextConfig;

@@ -35,6 +35,8 @@ export interface User {
     xConnected?: boolean;
     xUsername?: string;
     balance?: number;
+    brandWalletAddress?: string;
+    brandBalance?: number;
 }
 
 export interface Creator {
@@ -71,7 +73,7 @@ export const getUser = async (walletAddress: string): Promise<User> => {
 
 // ============= X (TWITTER) API =============
 
-export const connectX = async (walletAddress: string, username: string) => {
+export const connectX = async (walletAddress: string, username?: string) => {
     const response = await api.post("/api/x/connect", {
         walletAddress,
         username,
@@ -88,6 +90,16 @@ export const disconnectX = async (walletAddress: string) => {
 
 export const getXStatus = async (walletAddress: string) => {
     const response = await api.get(`/api/x/status/${walletAddress}`);
+    return response.data;
+};
+
+export const getXMetrics = async (walletAddress: string) => {
+    const response = await api.get(`/api/x/metrics/${walletAddress}`);
+    return response.data;
+};
+
+export const getTweetMetrics = async (walletAddress: string, tweetId: string) => {
+    const response = await api.get(`/api/x/tweet/${walletAddress}/${tweetId}`);
     return response.data;
 };
 

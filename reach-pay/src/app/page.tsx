@@ -106,9 +106,6 @@ export default function Home() {
       return;
     }
 
-    const username = prompt("Enter your X (Twitter) username:");
-    if (!username) return;
-
     try {
       // Ensure user is registered first
       if (!userRole) {
@@ -124,16 +121,41 @@ export default function Home() {
         console.log("User already registered or registration error:", error);
       }
 
-      // Now connect X account
-      const response = await connectXAPI(publicKey.toString(), username);
+      // Request OAuth URL from backend
+      const response = await connectXAPI(publicKey.toString());
 
       if (response.success) {
-        setIsXConnected(true);
-        setXUsername(username);
-        toast.success(`Connected to @${username}! 🎉`);
+        if (response.mock) {
+          // Mock mode - connection already made
+          setIsXConnected(true);
+          setXUsername(response.data.username);
+          toast.success(`Connected to @${response.data.username}! 🎉 (Mock Mode)`);
+          fetchDashboardData();
+        } else if (response.data.authUrl) {
+          // Real OAuth mode - open Twitter authorization in new window
+          toast("Opening Twitter authorization...");
+          const authWindow = window.open(
+            response.data.authUrl,
+            "Twitter Auth",
+            "width=600,height=700"
+          );
 
-        // Fetch campaigns after connecting
-        fetchDashboardData();
+          // Listen for the OAuth callback
+          const handleMessage = (event: MessageEvent) => {
+            if (event.data.type === "twitter-oauth-success") {
+              setIsXConnected(true);
+              setXUsername(event.data.username);
+              toast.success(`Connected to @${event.data.username}! 🎉`);
+              fetchDashboardData();
+              window.removeEventListener("message", handleMessage);
+            } else if (event.data.type === "twitter-oauth-error") {
+              toast.error(event.data.error || "Failed to connect X account");
+              window.removeEventListener("message", handleMessage);
+            }
+          };
+
+          window.addEventListener("message", handleMessage);
+        }
       } else {
         toast.error(response.error || "Failed to connect X account");
       }

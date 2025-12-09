@@ -9,6 +9,7 @@ const logger = require('./utils/logger');
 const { validateRequest, schemas } = require('./utils/validation');
 const { GracefulShutdown } = require('./utils/helpers');
 const db = require('./database');
+const TwitterAuthService = require('./twitterAuth');
 
 const app = express();
 const PORT = config.port;
@@ -58,6 +59,9 @@ try {
     logger.error(`Failed to initialize oracle: ${error.message}`);
     logger.warn('Server will run without oracle functionality');
 }
+
+// Initialize Twitter OAuth service
+const twitterService = new TwitterAuthService();
 
 // Error handling middleware
 const asyncHandler = (fn) => (req, res, next) => {
@@ -187,14 +191,14 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
 
 // ============= X (TWITTER) ENDPOINTS =============
 
-// Connect X account (mock for now - in production use OAuth)
+// Get X OAuth authorization URL
 app.post('/api/x/connect', asyncHandler(async (req, res) => {
-    const { walletAddress, username } = req.body;
+    const { walletAddress } = req.body;
 
-    if (!walletAddress || !username) {
+    if (!walletAddress) {
         return res.status(400).json({
             success: false,
-            error: 'Wallet address and X username are required',
+            error: 'Wallet address is required',
         });
     }
 
@@ -206,24 +210,83 @@ app.post('/api/x/connect', asyncHandler(async (req, res) => {
         });
     }
 
-    // Mock X connection - in production, implement OAuth flow
-    const xData = {
-        username: username,
-        userId: `x_${Date.now()}`,
-        accessToken: 'mock_access_token',
-        refreshToken: 'mock_refresh_token',
-    };
+    try {
+        if (!twitterService.enabled) {
+            // Fallback to mock mode for development
+            logger.warn('Twitter OAuth not configured, using mock mode');
+            const mockUsername = req.body.username || `user_${Date.now()}`;
+            const xData = {
+                username: mockUsername,
+                userId: `x_${Date.now()}`,
+                accessToken: 'mock_access_token',
+                refreshToken: 'mock_refresh_token',
+            };
 
-    const connection = db.connectX(walletAddress, xData);
-    logger.info(`X account connected: ${walletAddress} -> @${username}`);
+            const connection = db.connectX(walletAddress, xData);
+            logger.info(`X account connected (mock): ${walletAddress} -> @${mockUsername}`);
 
-    res.json({
-        success: true,
-        data: {
-            connected: true,
-            username: connection.xUsername,
-        },
-    });
+            return res.json({
+                success: true,
+                mock: true,
+                data: {
+                    connected: true,
+                    username: connection.xUsername,
+                },
+            });
+        }
+
+        // Generate real OAuth URL
+        const { url, state } = twitterService.generateAuthUrl(walletAddress);
+
+        logger.info(`Generated Twitter OAuth URL for wallet: ${walletAddress}`);
+
+        res.json({
+            success: true,
+            data: {
+                authUrl: url,
+                state,
+            },
+        });
+    } catch (error) {
+        logger.error(`Failed to initiate Twitter OAuth: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to initiate Twitter authentication',
+        });
+    }
+}));
+
+// OAuth callback endpoint
+app.get('/api/x/callback', asyncHandler(async (req, res) => {
+    const { code, state } = req.query;
+
+    if (!code || !state) {
+        return res.status(400).send('Missing OAuth parameters');
+    }
+
+    try {
+        const result = await twitterService.handleCallback(code, state);
+
+        // Store connection in database
+        const xData = {
+            username: result.username,
+            userId: result.userId,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+            followersCount: result.followersCount,
+        };
+
+        db.connectX(result.walletAddress, xData);
+        logger.info(`X account connected: ${result.walletAddress} -> @${result.username}`);
+
+        // Redirect to frontend with success
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        res.redirect(`${frontendUrl}/?x_connected=true&username=${result.username}`);
+    } catch (error) {
+        logger.error(`Twitter OAuth callback error: ${error.message}`);
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        res.redirect(`${frontendUrl}/?x_connected=false&error=${encodeURIComponent(error.message)}`);
+    }
 }));
 
 // Disconnect X account
@@ -237,7 +300,9 @@ app.post('/api/x/disconnect', asyncHandler(async (req, res) => {
         });
     }
 
+    // Disconnect from both database and Twitter service
     db.disconnectX(walletAddress);
+    twitterService.disconnectUser(walletAddress);
     logger.info(`X account disconnected: ${walletAddress}`);
 
     res.json({
@@ -258,6 +323,71 @@ app.get('/api/x/status/:walletAddress', asyncHandler(async (req, res) => {
             username: connection?.xUsername || null,
         },
     });
+}));
+
+// Get X user metrics (followers, etc.)
+app.get('/api/x/metrics/:walletAddress', asyncHandler(async (req, res) => {
+    const { walletAddress } = req.params;
+
+    if (!twitterService.enabled) {
+        // Return mock data if Twitter not configured
+        return res.json({
+            success: true,
+            mock: true,
+            data: {
+                followersCount: Math.floor(Math.random() * 100000) + 1000,
+                followingCount: Math.floor(Math.random() * 1000) + 100,
+                tweetCount: Math.floor(Math.random() * 10000) + 500,
+            },
+        });
+    }
+
+    try {
+        const metrics = await twitterService.getUserMetrics(walletAddress);
+        res.json({
+            success: true,
+            data: metrics,
+        });
+    } catch (error) {
+        logger.error(`Failed to get Twitter metrics: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch Twitter metrics',
+        });
+    }
+}));
+
+// Get tweet metrics for a specific tweet
+app.get('/api/x/tweet/:walletAddress/:tweetId', asyncHandler(async (req, res) => {
+    const { walletAddress, tweetId } = req.params;
+
+    if (!twitterService.enabled) {
+        // Return mock data if Twitter not configured
+        return res.json({
+            success: true,
+            mock: true,
+            data: {
+                impressions: Math.floor(Math.random() * 10000) + 1000,
+                likes: Math.floor(Math.random() * 500) + 50,
+                retweets: Math.floor(Math.random() * 100) + 10,
+                replies: Math.floor(Math.random() * 50) + 5,
+            },
+        });
+    }
+
+    try {
+        const metrics = await twitterService.getTweetMetrics(walletAddress, tweetId);
+        res.json({
+            success: true,
+            data: metrics,
+        });
+    } catch (error) {
+        logger.error(`Failed to get tweet metrics: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch tweet metrics',
+        });
+    }
 }));
 
 // ============= CAMPAIGN ENDPOINTS =============
