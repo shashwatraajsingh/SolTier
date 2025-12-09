@@ -60,6 +60,16 @@ try {
     logger.warn('Server will run without oracle functionality');
 }
 
+// Initialize Solana connection for balance checking (even without oracle)
+const { Connection } = require('@solana/web3.js');
+const solanaConnection = new Connection(
+    process.env.SOLANA_NETWORK === 'mainnet'
+        ? 'https://api.mainnet-beta.solana.com'
+        : 'https://api.testnet.solana.com',
+    'confirmed'
+);
+logger.info(`Solana connection initialized: ${process.env.SOLANA_NETWORK || 'testnet'}`);
+
 // Initialize Twitter OAuth service
 const twitterService = new TwitterAuthService();
 
@@ -162,17 +172,23 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
         if (brandWallet) {
             brandWalletAddress = brandWallet.publicKey;
 
-            // Fetch real SOL balance from blockchain (if oracle/connection exists)
-            if (oracle && oracle.connection) {
-                try {
-                    const { PublicKey } = require('@solana/web3.js');
-                    const balance = await oracle.connection.getBalance(
-                        new PublicKey(brandWallet.publicKey)
-                    );
-                    brandBalance = balance / 1e9; // Convert lamports to SOL
-                } catch (error) {
-                    logger.warn(`Failed to fetch brand wallet balance: ${error.message}`);
-                }
+            // Fetch real SOL balance from blockchain
+            try {
+                const { PublicKey } = require('@solana/web3.js');
+                // Add timeout to prevent long waits
+                const balancePromise = solanaConnection.getBalance(
+                    new PublicKey(brandWallet.publicKey)
+                );
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Balance fetch timeout')), 5000)
+                );
+                
+                const balance = await Promise.race([balancePromise, timeoutPromise]);
+                brandBalance = balance / 1e9; // Convert lamports to SOL
+            } catch (error) {
+                // Log warning but continue with 0 balance (doesn't block user)
+                logger.warn(`Failed to fetch brand wallet balance: ${error.message}`);
+                brandBalance = 0; // Default to 0 if fetch fails
             }
         }
     }
