@@ -37,6 +37,7 @@ export interface User {
     balance?: number;
     brandWalletAddress?: string;
     brandBalance?: number;
+    creatorEarnings?: number;
 }
 
 export interface Creator {
@@ -175,6 +176,22 @@ export const getTopCreators = async (limit: number = 10): Promise<Creator[]> => 
     );
     return response.data.data;
 };
+
+export const getCreatorEarnings = async (walletAddress: string): Promise<{ earnings: number; earningsLamports: number }> => {
+    const response = await api.get<{ success: boolean; data: { earnings: number; earningsLamports: number } }>(
+        `/api/creator/earnings/${walletAddress}`
+    );
+    return response.data.data;
+};
+
+export const withdrawCreatorEarnings = async (walletAddress: string, amount: number) => {
+    const response = await api.post("/api/creator/withdraw", {
+        walletAddress,
+        amount,
+    });
+    return response.data;
+};
+
 
 // ============= BALANCE API =============
 

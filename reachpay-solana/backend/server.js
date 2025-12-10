@@ -165,6 +165,7 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
     const xConnection = db.getXConnection(walletAddress);
     let brandBalance = 0;
     let brandWalletAddress = null;
+    let creatorEarnings = 0;
 
     // If user is a brand, get their generated wallet and check real balance
     if (user.role === 'brand') {
@@ -179,10 +180,10 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
                 const balancePromise = solanaConnection.getBalance(
                     new PublicKey(brandWallet.publicKey)
                 );
-                const timeoutPromise = new Promise((_, reject) => 
+                const timeoutPromise = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Balance fetch timeout')), 5000)
                 );
-                
+
                 const balance = await Promise.race([balancePromise, timeoutPromise]);
                 brandBalance = balance / 1e9; // Convert lamports to SOL
             } catch (error) {
@@ -193,6 +194,11 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
         }
     }
 
+    // If user is a creator, get their earnings balance
+    if (user.role === 'creator') {
+        creatorEarnings = db.getCreatorEarnings(walletAddress);
+    }
+
     res.json({
         success: true,
         data: {
@@ -201,6 +207,7 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
             xUsername: xConnection?.xUsername,
             brandWalletAddress,
             brandBalance, // Real SOL balance from blockchain
+            creatorEarnings: creatorEarnings / 1e9, // Convert lamports to SOL
         },
     });
 }));
@@ -719,6 +726,118 @@ app.get('/api/balance/:walletAddress', asyncHandler(async (req, res) => {
             balance: balance / 1e6,
         },
     });
+}));
+
+// ============= CREATOR EARNINGS ENDPOINTS =============
+
+// Get creator earnings
+app.get('/api/creator/earnings/:walletAddress', asyncHandler(async (req, res) => {
+    const { walletAddress } = req.params;
+
+    const user = db.getUser(walletAddress);
+    if (!user || user.role !== 'creator') {
+        return res.status(403).json({
+            success: false,
+            error: 'Only creators can check earnings',
+        });
+    }
+
+    const earnings = db.getCreatorEarnings(walletAddress);
+
+    res.json({
+        success: true,
+        data: {
+            earnings: earnings / 1e9, // Convert lamports to SOL
+            earningsLamports: earnings,
+        },
+    });
+}));
+
+// Withdraw creator earnings
+app.post('/api/creator/withdraw', asyncHandler(async (req, res) => {
+    const { walletAddress, amount } = req.body;
+
+    if (!walletAddress || !amount || amount <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'Valid wallet address and amount are required',
+        });
+    }
+
+    const user = db.getUser(walletAddress);
+    if (!user || user.role !== 'creator') {
+        return res.status(403).json({
+            success: false,
+            error: 'Only creators can withdraw earnings',
+        });
+    }
+
+    const amountInLamports = Math.floor(amount * 1e9); // Convert SOL to lamports
+    const currentEarnings = db.getCreatorEarnings(walletAddress);
+
+    if (currentEarnings < amountInLamports) {
+        return res.status(400).json({
+            success: false,
+            error: 'Insufficient earnings balance',
+            available: currentEarnings / 1e9,
+            requested: amount,
+        });
+    }
+
+    try {
+        // TODO: In production, implement actual SOL transfer from escrow to creator wallet
+        // For now, we'll simulate the withdrawal by just updating the database
+
+        // Note: In a real implementation, you would:
+        // 1. Transfer SOL from a platform escrow wallet to creator's login wallet
+        // 2. Use Solana web3.js to send the transaction
+        // 3. Wait for transaction confirmation
+        // 4. Then update the database
+
+        // Example (commented out - requires proper escrow wallet setup):
+        /*
+        const { Connection, PublicKey, Transaction, SystemProgram, Keypair } = require('@solana/web3.js');
+        const bs58 = require('bs58');
+        
+        // Get platform escrow wallet (you'd need to set this up)
+        const escrowKeypair = Keypair.fromSecretKey(
+            bs58.decode(process.env.ESCROW_WALLET_SECRET_KEY)
+        );
+        
+        const transaction = new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey: escrowKeypair.publicKey,
+                toPubkey: new PublicKey(walletAddress),
+                lamports: amountInLamports,
+            })
+        );
+        
+        const signature = await solanaConnection.sendTransaction(transaction, [escrowKeypair]);
+        await solanaConnection.confirmTransaction(signature);
+        */
+
+        // Deduct from creator earnings
+        const newBalance = db.deductCreatorEarnings(walletAddress, amountInLamports);
+
+        logger.info(`Creator withdrawal: ${walletAddress} withdrew ${amount} SOL`);
+
+        res.json({
+            success: true,
+            message: 'Withdrawal successful',
+            data: {
+                withdrawn: amount,
+                remainingBalance: newBalance / 1e9,
+                // In production, include transaction signature
+                // transactionSignature: signature,
+            },
+        });
+    } catch (error) {
+        logger.error(`Withdrawal failed for ${walletAddress}: ${error.message}`);
+        res.status(500).json({
+            success: false,
+            error: 'Withdrawal failed. Please try again.',
+        });
+    }
 }));
 
 // ============= METRICS ENDPOINTS =============
