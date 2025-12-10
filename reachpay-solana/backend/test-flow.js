@@ -11,38 +11,59 @@ async function main() {
     console.log("[TEST] SolTier Campaign Flow Test\n");
 
     // Setup connection
-    const connection = new Connection(NETWORK, "confirmed");
-
     // Load keypairs
     const payerKeypairData = JSON.parse(
         fs.readFileSync(path.join(process.env.HOME, ".config/solana/id.json"), "utf-8")
     );
     const payer = Keypair.fromSecretKey(new Uint8Array(payerKeypairData));
 
+    const NETWORK = "https://api.devnet.solana.com";
+    const connection = new Connection(NETWORK, "confirmed");
+
+    console.log("=".repeat(60));
+    console.log("  SolTier Oracle Backend - End-to-End Test");
+    console.log("=".repeat(60));
+    console.log("");
+
     console.log(`Payer: ${payer.publicKey.toString()}`);
 
-    // Generate test keypairs
-    const brand = Keypair.generate();
-    const creator = Keypair.generate();
-    const oracle = payer; // Use payer as oracle for testing
+    // Generate test wallets
+    const brandKeypair = Keypair.generate();
+    const creatorKeypair = Keypair.generate();
+    const oracleKeypair = Keypair.generate();
 
-    console.log(`Brand: ${brand.publicKey.toString()}`);
-    console.log(`Creator: ${creator.publicKey.toString()}`);
-    console.log(`Oracle: ${oracle.publicKey.toString()}\n`);
+    console.log("[WALLETS] Generated Test Wallets:");
+    console.log(`  Brand:   ${brandKeypair.publicKey.toString()}`);
+    console.log(`  Creator: ${creatorKeypair.publicKey.toString()}`);
+    console.log(`  Oracle:  ${oracleKeypair.publicKey.toString()}`);
+    console.log("");
+
+    // Helper: Request airdrop with retry
+    async function requestAirdropWithRetry(publicKey, amount, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                console.log(`  [AIRDROP]  Requesting ${amount} SOL for ${publicKey.toString().substring(0, 8)}...`);
+                const signature = await connection.requestAirdrop(publicKey, amount * LAMPORTS_PER_SOL);
+                await connection.confirmTransaction(signature);
+                console.log(`  [OK]       Airdrop confirmed\n`);
+                return;
+            } catch (error) {
+                if (i === retries - 1) {
+                    console.error(`  [WARNING]  Airdrop failed (devnet might be congested): ${error.message}\n`);
+                }
+                console.log(`  [RETRY]    Retrying airdrop for ${publicKey.toString().substring(0, 8)}... (Attempt ${i + 1}/${retries})`);
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
+            }
+        }
+    }
 
     // Airdrop SOL for testing
     console.log("[AIRDROP] Airdropping SOL to test accounts...");
-    try {
-        const brandAirdrop = await connection.requestAirdrop(brand.publicKey, 2 * 1e9);
-        await connection.confirmTransaction(brandAirdrop);
-        console.log(`  [OK] Brand airdrop confirmed`);
-
-        const creatorAirdrop = await connection.requestAirdrop(creator.publicKey, 2 * 1e9);
-        await connection.confirmTransaction(creatorAirdrop);
-        console.log(`  [OK] Creator airdrop confirmed\n`);
-    } catch (error) {
-        console.error(`  [WARNING]  Airdrop failed (testnet might be congested): ${error.message}\n`);
-    }
+    await requestAirdropWithRetry(payer.publicKey, 5);
+    await requestAirdropWithRetry(brandKeypair.publicKey, 2);
+    await requestAirdropWithRetry(creatorKeypair.publicKey, 2);
+    await requestAirdropWithRetry(oracleKeypair.publicKey, 1);
+    console.log("");
 
     // Create mock USDC token (testnet)
     console.log("[TOKEN] Creating mock USDC token...");

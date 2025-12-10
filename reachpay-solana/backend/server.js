@@ -66,10 +66,12 @@ const { Connection } = require('@solana/web3.js');
 const solanaConnection = new Connection(
     process.env.SOLANA_NETWORK === 'mainnet'
         ? 'https://api.mainnet-beta.solana.com'
-        : 'https://api.testnet.solana.com',
+        : process.env.SOLANA_NETWORK === 'testnet'
+            ? 'https://api.testnet.solana.com'
+            : 'https://api.devnet.solana.com', // devnet as default
     'confirmed'
 );
-logger.info(`Solana connection initialized: ${process.env.SOLANA_NETWORK || 'testnet'}`);
+logger.info(`Solana connection initialized: ${process.env.SOLANA_NETWORK || 'devnet'}`);
 
 // Initialize Twitter OAuth service
 const twitterService = new TwitterAuthService();

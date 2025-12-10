@@ -6,16 +6,20 @@ const path = require("path");
 require("dotenv").config();
 
 // Configuration
-const NETWORK = process.env.SOLANA_NETWORK || "testnet";
+const NETWORK = process.env.SOLANA_NETWORK || "devnet";
 const PROGRAM_ID = new PublicKey("11111111111111111111111111111111"); // Replace with deployed program ID
 const ORACLE_KEYPAIR_PATH = process.env.ORACLE_KEYPAIR_PATH || path.join(process.env.HOME, ".config/solana/id.json");
 
 class SolTierOracle {
     constructor() {
-        this.connection = new Connection(
-            NETWORK === "mainnet" ? clusterApiUrl("mainnet-beta") : "https://api.testnet.solana.com",
-            "confirmed"
-        );
+        // Initialize Solana connection with proper network selection
+        const rpcUrl = NETWORK === "mainnet"
+            ? clusterApiUrl("mainnet-beta")
+            : NETWORK === "testnet"
+                ? "https://api.testnet.solana.com"
+                : "https://api.devnet.solana.com"; // devnet as default
+
+        this.connection = new Connection(rpcUrl, "confirmed");
 
         // Load oracle keypair
         const oracleKeypairData = JSON.parse(fs.readFileSync(ORACLE_KEYPAIR_PATH, "utf-8"));

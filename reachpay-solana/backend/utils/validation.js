@@ -4,7 +4,7 @@ const Joi = require('joi');
 const envSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
     PORT: Joi.number().default(3001),
-    SOLANA_NETWORK: Joi.string().valid('mainnet', 'testnet', 'devnet', 'localnet').default('testnet'),
+    SOLANA_NETWORK: Joi.string().valid('mainnet', 'testnet', 'devnet', 'localnet').default('devnet'),
     ORACLE_KEYPAIR_PATH: Joi.string().optional(),
     PROGRAM_ID: Joi.string().optional().allow(''),
     MAX_RETRIES: Joi.number().default(3),

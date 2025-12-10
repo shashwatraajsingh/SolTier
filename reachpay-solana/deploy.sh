@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ReachPay Deployment Script for Solana Testnet
+# ReachPay Deployment Script for Solana Devnet
 
 set -e
 
@@ -28,8 +28,8 @@ echo "[OK] Prerequisites OK"
 echo ""
 
 # Configure network
-echo "[NETWORK] Configuring Solana testnet..."
-solana config set --url https://api.testnet.solana.com
+echo "[NETWORK] Configuring Solana devnet..."
+solana config set --url https://api.devnet.solana.com
 echo ""
 
 # Check balance
@@ -39,7 +39,7 @@ echo "   Balance: $BALANCE SOL"
 
 if (( $(echo "$BALANCE < 2" | bc -l) )); then
     echo "[WARNING]  Low balance. Requesting airdrop..."
-    solana airdrop 2 || echo "[WARNING]  Airdrop failed (testnet might be congested). You may need to get SOL from a faucet."
+    solana airdrop 2 || echo "[WARNING]  Airdrop failed (devnet might be congested). You may need to get SOL from a faucet."
 fi
 echo ""
 
@@ -73,7 +73,7 @@ echo "[OK] Rebuild complete"
 echo ""
 
 # Deploy
-echo "[DEPLOY] Deploying to testnet..."
+echo "[DEPLOY] Deploying to devnet..."
 solana program deploy target/deploy/soltier_solana.so
 
 if [ $? -eq 0 ]; then
@@ -83,8 +83,8 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "[CHECK] Deployment Info:"
     echo "   Program ID: $PROGRAM_ID"
-    echo "   Network: Testnet"
-    echo "   Explorer: https://explorer.solana.com/address/$PROGRAM_ID?cluster=testnet"
+    echo "   Network: Devnet"
+    echo "   Explorer: https://explorer.solana.com/address/$PROGRAM_ID?cluster=devnet"
     echo ""
     echo "[NEXT] Next Steps:"
     echo "   1. Update PROGRAM_ID in backend/oracle.js"
@@ -93,7 +93,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "[SAVE] Save this info:"
     echo "   Program ID: $PROGRAM_ID" > deployment-info.txt
-    echo "   Network: Testnet" >> deployment-info.txt
+    echo "   Network: Devnet" >> deployment-info.txt
     echo "   Date: $(date)" >> deployment-info.txt
     echo "   Deployment info saved to deployment-info.txt"
 else
