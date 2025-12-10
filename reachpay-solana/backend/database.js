@@ -25,6 +25,9 @@ class Database {
 
         // Brand wallets (generated keypairs)
         this.brandWallets = new Map(); // userWalletAddress -> { publicKey, secretKey }
+
+        // Creator earnings (accumulated from campaigns)
+        this.creatorEarnings = new Map(); // creatorWalletAddress -> earnings in lamports
     }
 
     // User methods
@@ -38,12 +41,23 @@ class Database {
 
         // Generate a brand wallet if user is a brand
         if (role === 'brand') {
-            const brandKeypair = Keypair.generate();
-            this.brandWallets.set(walletAddress, {
-                publicKey: brandKeypair.publicKey.toString(),
-                secretKey: bs58.default.encode(brandKeypair.secretKey),
-            });
-            user.brandWalletAddress = brandKeypair.publicKey.toString();
+            try {
+                const brandKeypair = Keypair.generate();
+                // bs58 v6.0.0 uses direct export, not .default
+                const secretKeyEncoded = typeof bs58.encode === 'function'
+                    ? bs58.encode(brandKeypair.secretKey)
+                    : bs58.default.encode(brandKeypair.secretKey);
+
+                this.brandWallets.set(walletAddress, {
+                    publicKey: brandKeypair.publicKey.toString(),
+                    secretKey: secretKeyEncoded,
+                });
+                user.brandWalletAddress = brandKeypair.publicKey.toString();
+                console.log(`✅ Brand wallet generated for ${walletAddress}: ${brandKeypair.publicKey.toString()}`);
+            } catch (error) {
+                console.error(`❌ Failed to generate brand wallet for ${walletAddress}:`, error);
+                throw new Error(`Brand wallet generation failed: ${error.message}`);
+            }
         }
 
         this.users.set(walletAddress, user);
@@ -199,6 +213,28 @@ class Database {
         }
         const newBalance = current - amount;
         this.balances.set(walletAddress, newBalance);
+        return newBalance;
+    }
+
+    // Creator earnings methods
+    getCreatorEarnings(walletAddress) {
+        return this.creatorEarnings.get(walletAddress) || 0;
+    }
+
+    addCreatorEarnings(walletAddress, amount) {
+        const current = this.getCreatorEarnings(walletAddress);
+        const newBalance = current + amount;
+        this.creatorEarnings.set(walletAddress, newBalance);
+        return newBalance;
+    }
+
+    deductCreatorEarnings(walletAddress, amount) {
+        const current = this.getCreatorEarnings(walletAddress);
+        if (current < amount) {
+            throw new Error('Insufficient earnings balance');
+        }
+        const newBalance = current - amount;
+        this.creatorEarnings.set(walletAddress, newBalance);
         return newBalance;
     }
 
