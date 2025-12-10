@@ -8,7 +8,8 @@ const config = require('./config');
 const logger = require('./utils/logger');
 const { validateRequest, schemas } = require('./utils/validation');
 const { GracefulShutdown } = require('./utils/helpers');
-const db = require('./database');
+// Use persistent database to survive server restarts
+const db = require('./persistentDatabase');
 const TwitterAuthService = require('./twitterAuth');
 
 const app = express();

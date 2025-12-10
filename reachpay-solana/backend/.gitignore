@@ -37,3 +37,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Database files (persistent storage)
+data/
+database.json
