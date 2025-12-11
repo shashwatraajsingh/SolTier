@@ -176,22 +176,23 @@ app.get('/api/user/:walletAddress', asyncHandler(async (req, res) => {
         if (brandWallet) {
             brandWalletAddress = brandWallet.publicKey;
 
-            // Fetch real SOL balance from blockchain
+            // Fetch real SOL balance from blockchain with timeout
             try {
                 const { PublicKey } = require('@solana/web3.js');
-                // Add timeout to prevent long waits
+                // Reduced timeout to 3 seconds for better UX
                 const balancePromise = solanaConnection.getBalance(
                     new PublicKey(brandWallet.publicKey)
                 );
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Balance fetch timeout')), 5000)
+                    setTimeout(() => reject(new Error('Balance fetch timeout')), 3000)
                 );
 
                 const balance = await Promise.race([balancePromise, timeoutPromise]);
                 brandBalance = balance / 1e9; // Convert lamports to SOL
+                logger.debug(`Brand balance fetched: ${brandBalance} SOL for ${walletAddress}`);
             } catch (error) {
                 // Log warning but continue with 0 balance (doesn't block user)
-                logger.warn(`Failed to fetch brand wallet balance: ${error.message}`);
+                logger.warn(`Failed to fetch brand wallet balance for ${walletAddress}: ${error.message}`);
                 brandBalance = 0; // Default to 0 if fetch fails
             }
         }
@@ -437,16 +438,42 @@ app.post('/api/campaign/create', asyncHandler(async (req, res) => {
         });
     }
 
-    // Check if brand has sufficient funds
-    const balance = db.getBalance(walletAddress);
-    const requiredFunds = maxBudget * 1e6; // Convert to lamports
-
-    if (balance < requiredFunds) {
+    // Get brand's generated wallet
+    const brandWallet = db.getBrandWallet(walletAddress);
+    if (!brandWallet) {
         return res.status(400).json({
             success: false,
-            error: 'Insufficient funds. Please add funds first.',
-            required: maxBudget,
-            available: balance / 1e6,
+            error: 'Brand wallet not found. Please refresh your profile.',
+        });
+    }
+
+    // Check real SOL balance in the brand wallet
+    let brandBalance = 0;
+    try {
+        const { PublicKey } = require('@solana/web3.js');
+        const balance = await solanaConnection.getBalance(
+            new PublicKey(brandWallet.publicKey)
+        );
+        brandBalance = balance / 1e9; // Convert lamports to SOL
+    } catch (error) {
+        logger.error(`Failed to fetch brand wallet balance: ${error.message}`);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch wallet balance. Please try again.',
+        });
+    }
+
+    // Check if brand has sufficient SOL funds (using SOL, not USDC)
+    // Convert maxBudget from USDC to SOL (1:1 for simplicity in this demo)
+    const requiredSOL = maxBudget;
+
+    if (brandBalance < requiredSOL) {
+        return res.status(400).json({
+            success: false,
+            error: `Insufficient SOL balance. You need ${requiredSOL} SOL but have ${brandBalance.toFixed(4)} SOL.`,
+            required: requiredSOL,
+            available: parseFloat(brandBalance.toFixed(4)),
+            brandWalletAddress: brandWallet.publicKey,
         });
     }
 
@@ -454,39 +481,38 @@ app.post('/api/campaign/create', asyncHandler(async (req, res) => {
     const now = Math.floor(Date.now() / 1000);
     const endTime = now + (durationDays * 86400);
 
+    // Store campaign with SOL-based values (using 1e9 for consistency)
     const campaign = db.createCampaign({
         campaignId,
         brand: walletAddress,
+        brandWalletAddress: brandWallet.publicKey,
         title: title || 'Untitled Campaign',
         description: description || '',
-        cpm: cpm * 1e6,
+        cpm: cpm * 1e9, // Use SOL decimals (1e9)
         likeWeight,
-        maxBudget: maxBudget * 1e6,
-        escrowBalance: maxBudget * 1e6,
+        maxBudget: maxBudget * 1e9, // Use SOL decimals
+        escrowBalance: maxBudget * 1e9,
         views: 0,
         likes: 0,
         effectiveViews: 0,
         totalPaid: 0,
-        remainingPayout: maxBudget * 1e6,
+        remainingPayout: maxBudget * 1e9,
         isActive: true,
         startTime: now.toString(),
         endTime: endTime.toString(),
     });
 
-    // Deduct funds from brand balance
-    db.deductFunds(walletAddress, requiredFunds);
-
-    logger.info(`Campaign created: ${campaignId} by ${walletAddress}`);
+    logger.info(`Campaign created: ${campaignId} by ${walletAddress} with ${maxBudget} SOL from brand wallet ${brandWallet.publicKey}`);
 
     res.json({
         success: true,
         data: {
             ...campaign,
-            cpm: campaign.cpm / 1e6,
-            maxBudget: campaign.maxBudget / 1e6,
-            escrowBalance: campaign.escrowBalance / 1e6,
-            totalPaid: campaign.totalPaid / 1e6,
-            remainingPayout: campaign.remainingPayout / 1e6,
+            cpm: campaign.cpm / 1e9,
+            maxBudget: campaign.maxBudget / 1e9,
+            escrowBalance: campaign.escrowBalance / 1e9,
+            totalPaid: campaign.totalPaid / 1e9,
+            remainingPayout: campaign.remainingPayout / 1e9,
         },
     });
 }));
@@ -507,11 +533,11 @@ app.get('/api/campaign/:id/status', asyncHandler(async (req, res) => {
         success: true,
         data: {
             ...campaign,
-            cpm: campaign.cpm / 1e6,
-            maxBudget: campaign.maxBudget / 1e6,
-            escrowBalance: campaign.escrowBalance / 1e6,
-            totalPaid: campaign.totalPaid / 1e6,
-            remainingPayout: campaign.remainingPayout / 1e6,
+            cpm: campaign.cpm / 1e9,
+            maxBudget: campaign.maxBudget / 1e9,
+            escrowBalance: campaign.escrowBalance / 1e9,
+            totalPaid: campaign.totalPaid / 1e9,
+            remainingPayout: campaign.remainingPayout / 1e9,
         },
     });
 }));
@@ -522,11 +548,11 @@ app.get('/api/campaigns/active', asyncHandler(async (req, res) => {
 
     const formatted = campaigns.map(c => ({
         ...c,
-        cpm: c.cpm / 1e6,
-        maxBudget: c.maxBudget / 1e6,
-        escrowBalance: c.escrowBalance / 1e6,
-        totalPaid: c.totalPaid / 1e6,
-        remainingPayout: c.remainingPayout / 1e6,
+        cpm: c.cpm / 1e9,
+        maxBudget: c.maxBudget / 1e9,
+        escrowBalance: c.escrowBalance / 1e9,
+        totalPaid: c.totalPaid / 1e9,
+        remainingPayout: c.remainingPayout / 1e9,
     }));
 
     res.json({
@@ -542,11 +568,11 @@ app.get('/api/campaigns/brand/:walletAddress', asyncHandler(async (req, res) => 
 
     const formatted = campaigns.map(c => ({
         ...c,
-        cpm: c.cpm / 1e6,
-        maxBudget: c.maxBudget / 1e6,
-        escrowBalance: c.escrowBalance / 1e6,
-        totalPaid: c.totalPaid / 1e6,
-        remainingPayout: c.remainingPayout / 1e6,
+        cpm: c.cpm / 1e9,
+        maxBudget: c.maxBudget / 1e9,
+        escrowBalance: c.escrowBalance / 1e9,
+        totalPaid: c.totalPaid / 1e9,
+        remainingPayout: c.remainingPayout / 1e9,
     }));
 
     res.json({
