@@ -222,7 +222,7 @@ export default function Home() {
                   <h1 className="text-4xl font-patrick font-bold">
                     {userRole === "brand" ? "Brand Dashboard" : "Creator Dashboard"}
                   </h1>
-                  <button
+                  {/* <button
                     onClick={() => {
                       setShowDemo(!showDemo);
                       if (!showDemo) setUserRole("brand");
@@ -230,7 +230,7 @@ export default function Home() {
                     className="text-sm underline font-inter text-gray-500"
                   >
                     {showDemo ? "Back to Home" : "View Demo Dashboard"}
-                  </button>
+                  </button> */}
                 </div>
 
                 {userRole === "brand" ? (
