@@ -56,7 +56,7 @@ export const CampaignDashboard = ({ campaignId }: { campaignId: string }) => {
                 <MetricCard
                     icon={<DollarSign className="w-6 h-6" />}
                     label="Earned"
-                    value={`$${(campaign.totalPaid / 1e6).toFixed(2)}`}
+                    value={`${(campaign.totalPaid / 1e9).toFixed(4)} SOL`}
                 />
             </div>
 
@@ -64,8 +64,8 @@ export const CampaignDashboard = ({ campaignId }: { campaignId: string }) => {
                 <h3 className="font-patrick text-xl mb-4">Campaign Details</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm font-inter text-gray-600">
                     <div>Status: <span className={campaign.isActive ? "text-green-600 font-bold" : "text-red-600"}>{campaign.isActive ? "ACTIVE" : "ENDED"}</span></div>
-                    <div>Budget: ${(campaign.maxBudget / 1e6).toLocaleString()}</div>
-                    <div>CPM: ${(campaign.cpm / 1e6).toFixed(2)}</div>
+                    <div>Budget: {(campaign.maxBudget / 1e9).toFixed(4)} SOL</div>
+                    <div>CPM: {(campaign.cpm / 1e9).toFixed(6)} SOL</div>
                     <div>Ends: {new Date(parseInt(campaign.endTime) * 1000).toLocaleDateString()}</div>
                 </div>
             </div>

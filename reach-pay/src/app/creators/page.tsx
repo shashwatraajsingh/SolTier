@@ -5,18 +5,22 @@ import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
 import { getTopCreators, Creator } from "@/lib/api";
 import Link from "next/link";
+import { PageLoader } from "@/components/LoadingSpinner";
 
 export default function CreatorsPage() {
     const [creators, setCreators] = useState<Creator[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCreators = async () => {
             try {
                 const data = await getTopCreators(20);
                 setCreators(data);
-            } catch (error) {
-                console.error("Failed to fetch creators:", error);
+                setError(null);
+            } catch (err) {
+                console.error("Failed to fetch creators:", err);
+                setError("Failed to load creators. Please try again.");
             } finally {
                 setLoading(false);
             }
@@ -40,16 +44,14 @@ export default function CreatorsPage() {
 
                 <div className="flex-grow max-w-6xl mx-auto px-6 py-16">
                     <div className="text-center mb-12">
-                        <h1 className="text-5xl font-patrick font-bold mb-4">Top Creators</h1>
-                        <p className="text-xl font-inter text-gray-600 max-w-2xl mx-auto">
+                        <h1 className="text-4xl md:text-5xl font-patrick font-bold mb-4">Top Creators</h1>
+                        <p className="text-lg md:text-xl font-inter text-gray-600 max-w-2xl mx-auto">
                             Discover the most influential voices on SolTier. Join them and start earning for your reach.
                         </p>
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-20">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
-                        </div>
+                        <PageLoader text="Loading creators..." />
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {creators.length > 0 ? (

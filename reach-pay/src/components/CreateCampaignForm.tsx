@@ -106,7 +106,7 @@ export const CreateCampaignForm = ({ onSuccess }: CreateCampaignFormProps) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="font-patrick text-lg">CPM (USDC)</label>
+                    <label className="font-patrick text-lg">CPM (SOL)</label>
                     <input
                         type="number"
                         value={formData.cpm}
@@ -129,7 +129,7 @@ export const CreateCampaignForm = ({ onSuccess }: CreateCampaignFormProps) => {
                 </div>
 
                 <div className="space-y-2">
-                    <label className="font-patrick text-lg">Budget (USDC)</label>
+                    <label className="font-patrick text-lg">Budget (SOL)</label>
                     <input
                         type="number"
                         value={formData.maxBudget}

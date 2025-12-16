@@ -145,7 +145,7 @@ export default function Home() {
             if (event.data.type === "twitter-oauth-success") {
               setIsXConnected(true);
               setXUsername(event.data.username);
-              toast.success(`Connected to @${event.data.username}! 🎉`);
+              toast.success(`Connected to @${event.data.username}! `);
               fetchDashboardData();
               window.removeEventListener("message", handleMessage);
             } else if (event.data.type === "twitter-oauth-error") {

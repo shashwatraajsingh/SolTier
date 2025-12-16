@@ -37,8 +37,8 @@ export default function PricingPage() {
                         </div>
 
                         {/* Brand Plan */}
-                        <div className="bg-[#ffeb3b] p-8 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col transform md:-translate-y-4">
-                            <div className="absolute top-0 right-0 bg-black text-white px-3 py-1 font-patrick text-sm">POPULAR</div>
+                        <div className="relative bg-[#ffeb3b] p-8 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col transform md:-translate-y-4">
+                            <div className="absolute -top-3 right-4 bg-black text-white px-3 py-1 font-patrick text-sm">POPULAR</div>
                             <h2 className="text-3xl font-patrick font-bold mb-2">Brands</h2>
                             <div className="text-4xl font-bold mb-6">5% <span className="text-lg font-normal text-gray-700">fee</span></div>
                             <ul className="space-y-4 font-inter text-gray-800 flex-grow mb-8">

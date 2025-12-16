@@ -2,23 +2,22 @@ import { ArrowRight } from 'lucide-react';
 
 export default function Hero() {
     return (
-        <section className="container py-20 grid grid-cols-2 gap-8 hero-grid items-center">
-            <div className="flex flex-col gap-6">
-                <h1 className="text-6xl mb-4">
+        <section className="container py-12 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center px-6">
+            <div className="flex flex-col gap-6 text-center lg:text-left">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl mb-4">
                     Get paid for your reach. <span className="highlight">Automatically.</span>
                 </h1>
-                <h2 className="text-2xl font-normal mb-4">
+                <h2 className="text-xl md:text-2xl font-normal mb-4">
                     Performance-based payouts for X promotions.<br />
                     Views + likes. On-chain. No guesswork.
                 </h2>
-                <div className="text-lg mb-6 space-y-2">
+                <div className="text-base md:text-lg mb-6 space-y-2">
                     <p>Flat fees are broken. Posts flop? Brands lose.</p>
                     <p>Posts overperform? Creators lose.</p>
                     <p>SolTier fixes that — you get <span className="marker-underline">paid per 1,000 views</span>, with <span className="marker-underline">engagement bonuses</span>.</p>
                     <p className="text-sm mt-2 text-gray-600">Settled on Solana</p>
                 </div>
-                <div className="flex gap-4 items-center">
-
+                <div className="flex gap-4 items-center justify-center lg:justify-start">
                     <button className="sketch-button secondary flex items-center gap-2">
                         See how it works <ArrowRight size={20} />
                     </button>
@@ -27,7 +26,7 @@ export default function Hero() {
 
             <div className="flex flex-col gap-6">
                 {/* Card 1: Live Campaign Metrics */}
-                <div className="sketch-border p-6 bg-white transform rotate-1 hover:rotate-0 transition-transform">
+                <div className="sketch-border p-6 bg-white transform lg:rotate-1 hover:rotate-0 transition-transform">
                     <h3 className="text-xl mb-4 border-b-2 border-black pb-2 inline-block">Campaign performance</h3>
                     <div className="space-y-4 font-sans">
                         <div className="flex justify-between">
@@ -50,7 +49,7 @@ export default function Hero() {
                 </div>
 
                 {/* Card 2: Payout Preview */}
-                <div className="sketch-border p-6 bg-white transform -rotate-2 hover:rotate-0 transition-transform w-3/4 self-end">
+                <div className="sketch-border p-6 bg-white transform lg:-rotate-2 hover:rotate-0 transition-transform w-full lg:w-3/4 self-center lg:self-end">
                     <h3 className="text-lg mb-2">Estimated payout</h3>
                     <div className="text-4xl font-bold font-sans mb-1">$1,210</div>
                     <p className="text-sm text-gray-500">Based on weighted CPM formula</p>
