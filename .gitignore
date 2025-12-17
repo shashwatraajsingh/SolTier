@@ -30,6 +30,7 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+*.swo
 
 # Solana
 .anchor/
@@ -37,3 +38,31 @@ target/
 
 # Test files
 coverage/
+
+# Database files (local development)
+**/data/database.json
+
+# Test and utility scripts (keep in local dev only)
+test-*.sh
+test-*.js
+airdrop.js
+check-*.js
+transfer-*.js
+register-*.js
+
+# Keypair files
+*.json.bak
+escrow-keypair.json
+*-keypair.json
+
+# Lock files (optional - some prefer to commit these)
+# package-lock.json
+# yarn.lock
+
+# Cargo lock for standalone crates
+# Cargo.lock
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
