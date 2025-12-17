@@ -55,6 +55,9 @@ export interface Application {
     proposedContent: string;
     status: "pending" | "approved" | "rejected";
     createdAt: string;
+    tweetId?: string;
+    tweetUrl?: string;
+    tweetSubmittedAt?: string;
 }
 
 // ============= USER API =============
@@ -166,6 +169,56 @@ export const updateApplicationStatus = async (
         walletAddress,
     });
     return response.data;
+};
+
+// Cancel a campaign (brand only)
+export const cancelCampaign = async (campaignId: string, walletAddress: string) => {
+    const response = await api.post(`/api/campaign/${campaignId}/cancel`, {
+        walletAddress,
+    });
+    return response.data;
+};
+
+// Submit a tweet for campaign tracking (creator only)
+export interface TweetSubmission {
+    submissionId: string;
+    campaignId: string;
+    creatorAddress: string;
+    tweetId: string;
+    tweetUrl: string;
+    submittedAt: string;
+    status: string;
+}
+
+export const submitTweet = async (
+    campaignId: string,
+    walletAddress: string,
+    tweetData: { tweetId?: string; tweetUrl?: string }
+): Promise<TweetSubmission> => {
+    const response = await api.post<{ success: boolean; data: TweetSubmission }>(
+        `/api/campaign/${campaignId}/submit-tweet`,
+        {
+            walletAddress,
+            ...tweetData,
+        }
+    );
+    return response.data.data;
+};
+
+// Get all tweets for a campaign
+export interface CampaignTweet {
+    applicationId: string;
+    creatorAddress: string;
+    tweetId: string;
+    tweetUrl: string;
+    submittedAt: string;
+}
+
+export const getCampaignTweets = async (campaignId: string): Promise<CampaignTweet[]> => {
+    const response = await api.get<{ success: boolean; data: CampaignTweet[] }>(
+        `/api/campaign/${campaignId}/tweets`
+    );
+    return response.data.data;
 };
 
 // ============= CREATOR API =============

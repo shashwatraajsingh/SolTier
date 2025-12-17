@@ -687,6 +687,197 @@ app.put('/api/application/:id/status', asyncHandler(async (req, res) => {
     });
 }));
 
+// Cancel campaign (brand) - returns remaining funds
+app.post('/api/campaign/:id/cancel', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { walletAddress } = req.body;
+
+    if (!walletAddress) {
+        return res.status(400).json({
+            success: false,
+            error: 'Wallet address is required',
+        });
+    }
+
+    const campaign = db.getCampaign(id);
+    if (!campaign) {
+        return res.status(404).json({
+            success: false,
+            error: 'Campaign not found',
+        });
+    }
+
+    // Verify requester is the campaign brand
+    if (campaign.brand !== walletAddress) {
+        return res.status(403).json({
+            success: false,
+            error: 'Only the campaign brand can cancel this campaign',
+        });
+    }
+
+    if (!campaign.isActive) {
+        return res.status(400).json({
+            success: false,
+            error: 'Campaign is already inactive',
+        });
+    }
+
+    // Calculate remaining funds
+    const remainingFunds = campaign.escrowBalance - campaign.totalPaid;
+
+    // Deactivate campaign
+    const updated = db.updateCampaign(id, {
+        isActive: false,
+        endTime: Math.floor(Date.now() / 1000).toString(),
+        cancelledAt: new Date().toISOString(),
+    });
+
+    logger.info(`Campaign cancelled: ${id} by ${walletAddress}. Remaining: ${remainingFunds / 1e9} SOL`);
+
+    res.json({
+        success: true,
+        message: 'Campaign cancelled successfully',
+        data: {
+            campaignId: id,
+            refundAmount: remainingFunds / 1e9,
+            totalPaid: campaign.totalPaid / 1e9,
+            campaign: {
+                ...updated,
+                cpm: updated.cpm / 1e9,
+                maxBudget: updated.maxBudget / 1e9,
+                escrowBalance: updated.escrowBalance / 1e9,
+                totalPaid: updated.totalPaid / 1e9,
+                remainingPayout: updated.remainingPayout / 1e9,
+            },
+        },
+    });
+}));
+
+// ============= TWEET TRACKING ENDPOINTS =============
+
+// Submit tweet for campaign tracking
+app.post('/api/campaign/:id/submit-tweet', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { walletAddress, tweetId, tweetUrl } = req.body;
+
+    if (!walletAddress || (!tweetId && !tweetUrl)) {
+        return res.status(400).json({
+            success: false,
+            error: 'Wallet address and tweet ID or URL are required',
+        });
+    }
+
+    const user = db.getUser(walletAddress);
+    if (!user || user.role !== 'creator') {
+        return res.status(403).json({
+            success: false,
+            error: 'Only creators can submit tweets',
+        });
+    }
+
+    const campaign = db.getCampaign(id);
+    if (!campaign) {
+        return res.status(404).json({
+            success: false,
+            error: 'Campaign not found',
+        });
+    }
+
+    if (!campaign.isActive) {
+        return res.status(400).json({
+            success: false,
+            error: 'Campaign is not active',
+        });
+    }
+
+    // Check if creator has an approved application
+    const applications = db.getCampaignApplications(id);
+    const creatorApp = applications.find(a => a.creatorAddress === walletAddress && a.status === 'approved');
+
+    if (!creatorApp) {
+        return res.status(403).json({
+            success: false,
+            error: 'You must have an approved application to submit tweets for this campaign',
+        });
+    }
+
+    // Extract tweet ID from URL if needed
+    let extractedTweetId = tweetId;
+    if (!extractedTweetId && tweetUrl) {
+        const match = tweetUrl.match(/status\/(\d+)/);
+        if (match) {
+            extractedTweetId = match[1];
+        } else {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid tweet URL format',
+            });
+        }
+    }
+
+    // Store tweet submission (add to database)
+    const tweetSubmission = {
+        submissionId: `tweet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        campaignId: id,
+        creatorAddress: walletAddress,
+        tweetId: extractedTweetId,
+        tweetUrl: tweetUrl || `https://twitter.com/i/web/status/${extractedTweetId}`,
+        submittedAt: new Date().toISOString(),
+        status: 'pending_verification',
+        metrics: {
+            views: 0,
+            likes: 0,
+            retweets: 0,
+            lastUpdated: null,
+        },
+    };
+
+    // Store in applications table for now (we could add a tweets table later)
+    db.updateApplication(creatorApp.applicationId, {
+        tweetId: extractedTweetId,
+        tweetUrl: tweetSubmission.tweetUrl,
+        tweetSubmittedAt: tweetSubmission.submittedAt,
+    });
+
+    logger.info(`Tweet submitted for campaign ${id}: ${extractedTweetId} by ${walletAddress}`);
+
+    res.json({
+        success: true,
+        message: 'Tweet submitted successfully',
+        data: tweetSubmission,
+    });
+}));
+
+// Get campaign tweets
+app.get('/api/campaign/:id/tweets', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const campaign = db.getCampaign(id);
+    if (!campaign) {
+        return res.status(404).json({
+            success: false,
+            error: 'Campaign not found',
+        });
+    }
+
+    // Get all approved applications with tweets
+    const applications = db.getCampaignApplications(id);
+    const tweets = applications
+        .filter(a => a.status === 'approved' && a.tweetId)
+        .map(a => ({
+            applicationId: a.applicationId,
+            creatorAddress: a.creatorAddress,
+            tweetId: a.tweetId,
+            tweetUrl: a.tweetUrl,
+            submittedAt: a.tweetSubmittedAt,
+        }));
+
+    res.json({
+        success: true,
+        data: tweets,
+    });
+}));
+
 // ============= CREATOR ENDPOINTS =============
 
 // Get top creators (for brands)
@@ -711,7 +902,7 @@ app.get('/api/creators/top', asyncHandler(async (req, res) => {
 
 // ============= BALANCE ENDPOINTS =============
 
-// Add funds (brand)
+// Add funds (brand) - Legacy endpoint, prefer direct SOL deposits
 app.post('/api/balance/add', asyncHandler(async (req, res) => {
     const { walletAddress, amount } = req.body;
 
@@ -730,15 +921,16 @@ app.post('/api/balance/add', asyncHandler(async (req, res) => {
         });
     }
 
-    const amountInLamports = Math.floor(amount * 1e6);
+    // Use 1e9 (lamports) for consistency with SOL
+    const amountInLamports = Math.floor(amount * 1e9);
     const newBalance = db.addFunds(walletAddress, amountInLamports);
 
-    logger.info(`Funds added: ${walletAddress} +${amount} USDC`);
+    logger.info(`Funds added: ${walletAddress} +${amount} SOL`);
 
     res.json({
         success: true,
         data: {
-            balance: newBalance / 1e6,
+            balance: newBalance / 1e9,
             added: amount,
         },
     });
@@ -752,7 +944,7 @@ app.get('/api/balance/:walletAddress', asyncHandler(async (req, res) => {
     res.json({
         success: true,
         data: {
-            balance: balance / 1e6,
+            balance: balance / 1e9, // Use 1e9 for SOL consistency
         },
     });
 }));
@@ -813,53 +1005,111 @@ app.post('/api/creator/withdraw', asyncHandler(async (req, res) => {
         });
     }
 
-    try {
-        // TODO: In production, implement actual SOL transfer from escrow to creator wallet
-        // For now, we'll simulate the withdrawal by just updating the database
-
-        // Note: In a real implementation, you would:
-        // 1. Transfer SOL from a platform escrow wallet to creator's login wallet
-        // 2. Use Solana web3.js to send the transaction
-        // 3. Wait for transaction confirmation
-        // 4. Then update the database
-
-        // Example (commented out - requires proper escrow wallet setup):
-        /*
-        const { Connection, PublicKey, Transaction, SystemProgram, Keypair } = require('@solana/web3.js');
-        const bs58 = require('bs58');
-        
-        // Get platform escrow wallet (you'd need to set this up)
-        const escrowKeypair = Keypair.fromSecretKey(
-            bs58.decode(process.env.ESCROW_WALLET_SECRET_KEY)
-        );
-        
-        const transaction = new Transaction().add(
-            SystemProgram.transfer({
-                fromPubkey: escrowKeypair.publicKey,
-                toPubkey: new PublicKey(walletAddress),
-                lamports: amountInLamports,
-            })
-        );
-        
-        const signature = await solanaConnection.sendTransaction(transaction, [escrowKeypair]);
-        await solanaConnection.confirmTransaction(signature);
-        */
-
-        // Deduct from creator earnings
-        const newBalance = db.deductCreatorEarnings(walletAddress, amountInLamports);
-
-        logger.info(`Creator withdrawal: ${walletAddress} withdrew ${amount} SOL`);
-
-        res.json({
-            success: true,
-            message: 'Withdrawal successful',
-            data: {
-                withdrawn: amount,
-                remainingBalance: newBalance / 1e9,
-                // In production, include transaction signature
-                // transactionSignature: signature,
-            },
+    // Minimum withdrawal amount (0.001 SOL to cover fees)
+    const minWithdrawal = 0.001 * 1e9;
+    if (amountInLamports < minWithdrawal) {
+        return res.status(400).json({
+            success: false,
+            error: `Minimum withdrawal is 0.001 SOL`,
+            minimum: 0.001,
         });
+    }
+
+    try {
+        let transactionSignature = null;
+        let transferSuccess = false;
+
+        // Check if escrow wallet is configured for real transfers
+        if (process.env.ESCROW_WALLET_SECRET_KEY) {
+            const { Connection, PublicKey, Transaction, SystemProgram, Keypair } = require('@solana/web3.js');
+            const bs58 = require('bs58');
+
+            try {
+                // Get platform escrow wallet
+                const secretKey = typeof bs58.decode === 'function'
+                    ? bs58.decode(process.env.ESCROW_WALLET_SECRET_KEY)
+                    : bs58.default.decode(process.env.ESCROW_WALLET_SECRET_KEY);
+                const escrowKeypair = Keypair.fromSecretKey(secretKey);
+
+                // Check escrow balance first
+                const escrowBalance = await solanaConnection.getBalance(escrowKeypair.publicKey);
+                const requiredBalance = amountInLamports + 5000; // Add 5000 lamports for tx fee
+
+                if (escrowBalance < requiredBalance) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Insufficient funds in escrow wallet. Please try again later or contact support.',
+                        escrowBalance: escrowBalance / 1e9,
+                    });
+                }
+
+                // Create and send transfer transaction
+                const transaction = new Transaction().add(
+                    SystemProgram.transfer({
+                        fromPubkey: escrowKeypair.publicKey,
+                        toPubkey: new PublicKey(walletAddress),
+                        lamports: amountInLamports,
+                    })
+                );
+
+                // Get latest blockhash
+                const { blockhash } = await solanaConnection.getLatestBlockhash('confirmed');
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = escrowKeypair.publicKey;
+
+                // Sign and send
+                const signature = await solanaConnection.sendTransaction(transaction, [escrowKeypair], {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed',
+                });
+
+                // Wait for confirmation (with timeout)
+                const confirmPromise = solanaConnection.confirmTransaction(signature, 'confirmed');
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Transaction confirmation timeout')), 30000)
+                );
+
+                await Promise.race([confirmPromise, timeoutPromise]);
+
+                transactionSignature = signature;
+                transferSuccess = true;
+                logger.info(`SOL transfer successful: ${amount} SOL to ${walletAddress}, tx: ${signature}`);
+
+            } catch (transferError) {
+                logger.error(`SOL transfer failed: ${transferError.message}`);
+                // If transfer fails, return error without updating database
+                return res.status(500).json({
+                    success: false,
+                    error: 'Blockchain transfer failed. Please try again later.',
+                    details: config.isDevelopment ? transferError.message : undefined,
+                });
+            }
+        } else {
+            // No escrow configured - simulation mode (for development)
+            logger.warn('Escrow wallet not configured. Processing withdrawal in simulation mode.');
+            transferSuccess = true;
+        }
+
+        // Only update database if transfer succeeded
+        if (transferSuccess) {
+            const newBalance = db.deductCreatorEarnings(walletAddress, amountInLamports);
+
+            logger.info(`Creator withdrawal: ${walletAddress} withdrew ${amount} SOL${transactionSignature ? ` (tx: ${transactionSignature})` : ' (simulated)'}`);
+
+            res.json({
+                success: true,
+                message: transactionSignature ? 'Withdrawal successful - SOL transferred to your wallet' : 'Withdrawal successful (simulation mode)',
+                data: {
+                    withdrawn: amount,
+                    remainingBalance: newBalance / 1e9,
+                    transactionSignature: transactionSignature,
+                    explorerUrl: transactionSignature
+                        ? `https://explorer.solana.com/tx/${transactionSignature}?cluster=${process.env.SOLANA_NETWORK || 'devnet'}`
+                        : null,
+                    simulation: !transactionSignature,
+                },
+            });
+        }
     } catch (error) {
         logger.error(`Withdrawal failed for ${walletAddress}: ${error.message}`);
         res.status(500).json({
@@ -908,10 +1158,10 @@ app.post('/api/metrics/update', asyncHandler(async (req, res) => {
         success: true,
         data: {
             ...updated,
-            cpm: updated.cpm / 1e6,
-            maxBudget: updated.maxBudget / 1e6,
-            totalPaid: updated.totalPaid / 1e6,
-            remainingPayout: updated.remainingPayout / 1e6,
+            cpm: updated.cpm / 1e9,
+            maxBudget: updated.maxBudget / 1e9,
+            totalPaid: updated.totalPaid / 1e9,
+            remainingPayout: updated.remainingPayout / 1e9,
         },
     });
 }));
