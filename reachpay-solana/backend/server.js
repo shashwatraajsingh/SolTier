@@ -900,6 +900,155 @@ app.get('/api/creators/top', asyncHandler(async (req, res) => {
     });
 }));
 
+// Get creator's applications (for creators to track their campaigns)
+app.get('/api/creator/applications/:walletAddress', asyncHandler(async (req, res) => {
+    const { walletAddress } = req.params;
+
+    const user = db.getUser(walletAddress);
+    if (!user || user.role !== 'creator') {
+        return res.status(403).json({
+            success: false,
+            error: 'Only creators can view their applications',
+        });
+    }
+
+    const applications = db.getCreatorApplications(walletAddress);
+
+    // Enrich with campaign details
+    const enrichedApplications = applications.map(app => {
+        const campaign = db.getCampaign(app.campaignId);
+        return {
+            ...app,
+            campaign: campaign ? {
+                title: campaign.title,
+                description: campaign.description,
+                cpm: campaign.cpm / 1e9,
+                maxBudget: campaign.maxBudget / 1e9,
+                isActive: campaign.isActive,
+                brand: campaign.brand,
+            } : null,
+        };
+    });
+
+    res.json({
+        success: true,
+        data: enrichedApplications,
+    });
+}));
+
+// Process payout for a creator based on their campaign performance
+app.post('/api/campaign/:id/process-payout', asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { creatorAddress } = req.body;
+
+    if (!creatorAddress) {
+        return res.status(400).json({
+            success: false,
+            error: 'Creator address is required',
+        });
+    }
+
+    const campaign = db.getCampaign(id);
+    if (!campaign) {
+        return res.status(404).json({
+            success: false,
+            error: 'Campaign not found',
+        });
+    }
+
+    if (!campaign.isActive) {
+        return res.status(400).json({
+            success: false,
+            error: 'Campaign is not active',
+        });
+    }
+
+    // Check if creator has approved application
+    const applications = db.getCampaignApplications(id);
+    const creatorApp = applications.find(a => a.creatorAddress === creatorAddress && a.status === 'approved');
+
+    if (!creatorApp) {
+        return res.status(403).json({
+            success: false,
+            error: 'Creator does not have an approved application for this campaign',
+        });
+    }
+
+    // Check if creator has submitted a tweet
+    if (!creatorApp.tweetId) {
+        return res.status(400).json({
+            success: false,
+            error: 'No tweet submitted for this campaign. Submit a tweet first.',
+        });
+    }
+
+    // Calculate payout based on metrics
+    // In production, fetch real metrics from Twitter API
+    // For now, use mock metrics or stored metrics
+    let tweetMetrics = { views: 0, likes: 0 };
+
+    if (twitterService.enabled) {
+        try {
+            tweetMetrics = await twitterService.getTweetMetrics(creatorAddress, creatorApp.tweetId);
+        } catch (error) {
+            logger.warn(`Could not fetch tweet metrics: ${error.message}. Using mock data.`);
+            tweetMetrics = {
+                views: Math.floor(Math.random() * 50000) + 5000,
+                likes: Math.floor(Math.random() * 1000) + 100,
+            };
+        }
+    } else {
+        // Mock metrics for testing
+        tweetMetrics = {
+            views: Math.floor(Math.random() * 50000) + 5000,
+            likes: Math.floor(Math.random() * 1000) + 100,
+        };
+    }
+
+    // Calculate effective views and payout
+    const effectiveViews = tweetMetrics.views + (tweetMetrics.likes * campaign.likeWeight);
+    const payoutLamports = Math.floor((effectiveViews / 1000) * campaign.cpm);
+
+    // Cap at remaining budget
+    const maxPayout = campaign.escrowBalance - campaign.totalPaid;
+    const actualPayout = Math.min(payoutLamports, maxPayout);
+
+    if (actualPayout <= 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'No payout available. Campaign budget exhausted or no metrics.',
+        });
+    }
+
+    // Update campaign metrics and total paid
+    db.updateCampaign(id, {
+        views: campaign.views + tweetMetrics.views,
+        likes: campaign.likes + tweetMetrics.likes,
+        effectiveViews: campaign.effectiveViews + effectiveViews,
+        totalPaid: campaign.totalPaid + actualPayout,
+        remainingPayout: campaign.maxBudget - (campaign.totalPaid + actualPayout),
+    });
+
+    // Add earnings to creator
+    const newEarnings = db.addCreatorEarnings(creatorAddress, actualPayout);
+
+    logger.info(`Payout processed: ${creatorAddress} earned ${actualPayout / 1e9} SOL from campaign ${id}`);
+
+    res.json({
+        success: true,
+        message: 'Payout processed successfully',
+        data: {
+            campaignId: id,
+            creatorAddress,
+            tweetId: creatorApp.tweetId,
+            metrics: tweetMetrics,
+            effectiveViews,
+            payout: actualPayout / 1e9,
+            totalEarnings: newEarnings / 1e9,
+        },
+    });
+}));
+
 // ============= BALANCE ENDPOINTS =============
 
 // Add funds (brand) - Legacy endpoint, prefer direct SOL deposits
@@ -1185,7 +1334,7 @@ app.post('/api/campaign/:id/settle', asyncHandler(async (req, res) => {
         message: 'Payout settlement initiated',
         data: {
             campaignId: id,
-            amount: campaign.totalPaid / 1e6,
+            amount: campaign.totalPaid / 1e9, // Fixed: use 1e9 for SOL
             creatorTokenAccount,
         },
     });

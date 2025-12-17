@@ -230,6 +230,24 @@ export const getTopCreators = async (limit: number = 10): Promise<Creator[]> => 
     return response.data.data;
 };
 
+export interface CreatorApplicationWithCampaign extends Application {
+    campaign: {
+        title: string;
+        description: string;
+        cpm: number;
+        maxBudget: number;
+        isActive: boolean;
+        brand: string;
+    } | null;
+}
+
+export const getCreatorApplications = async (walletAddress: string): Promise<CreatorApplicationWithCampaign[]> => {
+    const response = await api.get<{ success: boolean; data: CreatorApplicationWithCampaign[] }>(
+        `/api/creator/applications/${walletAddress}`
+    );
+    return response.data.data;
+};
+
 export const getCreatorEarnings = async (walletAddress: string): Promise<{ earnings: number; earningsLamports: number }> => {
     const response = await api.get<{ success: boolean; data: { earnings: number; earningsLamports: number } }>(
         `/api/creator/earnings/${walletAddress}`
@@ -243,6 +261,24 @@ export const withdrawCreatorEarnings = async (walletAddress: string, amount: num
         amount,
     });
     return response.data;
+};
+
+export interface PayoutResult {
+    campaignId: string;
+    creatorAddress: string;
+    tweetId: string;
+    metrics: { views: number; likes: number };
+    effectiveViews: number;
+    payout: number;
+    totalEarnings: number;
+}
+
+export const processCampaignPayout = async (campaignId: string, creatorAddress: string): Promise<PayoutResult> => {
+    const response = await api.post<{ success: boolean; data: PayoutResult }>(
+        `/api/campaign/${campaignId}/process-payout`,
+        { creatorAddress }
+    );
+    return response.data.data;
 };
 
 

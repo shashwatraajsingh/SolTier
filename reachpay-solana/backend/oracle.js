@@ -223,7 +223,7 @@ class SolTierOracle {
 
 // CLI interface
 if (require.main === module) {
-    const oracle = new ReachPayOracle();
+    const oracle = new SolTierOracle();
 
     const args = process.argv.slice(2);
     const command = args[0];

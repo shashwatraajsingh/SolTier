@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "dev": "npx nodemon server.js",
     "oracle": "node oracle.js monitor",
     "test": "node test-flow.js"
   },
