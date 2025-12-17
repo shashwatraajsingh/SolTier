@@ -1,266 +1,258 @@
 # SolTier
 
-Performance-based influencer marketing platform built on Solana blockchain. Transparent, automated, and trustless creator compensation system.
+**Performance-Based Influencer Marketing on Solana**
 
-## What is SolTier?
-
-SolTier revolutionizes influencer marketing by eliminating intermediaries and fraud. Brands pay only for verified performance, and creators get paid instantly for real engagement. All transactions are automated through smart contracts on the Solana blockchain, with metrics verified through Twitter's official API.
-
-## The Problem We Solve
-
-Traditional influencer marketing suffers from:
-- **Fraud and Fake Metrics**: 15-25% of budgets lost to fake followers and inflated numbers
-- **Payment Delays**: Creators wait 30-90 days for payment
-- **High Fees**: Platforms charge 20-40% of campaign budgets
-- **Lack of Transparency**: Brands cannot verify actual ROI
-- **Trust Issues**: No guarantees for either party
-
-## How SolTier Works
-
-### For Brands
-
-1. **Create a Campaign**
-   - Set your CPM rate (cost per 1,000 effective views)
-   - Define budget and duration
-   - Funds are locked in blockchain escrow
-
-2. **Discover Verified Creators**
-   - Browse creators with real Twitter-verified metrics
-   - See actual follower counts and engagement rates
-   - No fake accounts or inflated numbers
-
-3. **Track Performance in Real-Time**
-   - Watch views and likes accumulate live
-   - See exact payout calculations transparently
-   - Monitor ROI with precision
-
-4. **Automatic Payment**
-   - Creators paid automatically as metrics hit milestones
-   - No invoices, no manual approvals
-   - Funds released from escrow based on performance
-
-### For Creators
-
-1. **Connect Your Accounts**
-   - Link Solana wallet for payments
-   - Authenticate Twitter via OAuth
-   - Your real reach is verified automatically
-
-2. **Browse and Apply to Campaigns**
-   - View available brand campaigns
-   - See payment terms upfront
-   - Apply with proposed content
-
-3. **Create Content**
-   - Post on Twitter as agreed
-   - System tracks views and engagement automatically
-   - Real-time performance visibility
-
-4. **Get Paid Instantly**
-   - Earnings calculated every view and like
-   - Automatic payment in seconds
-   - No waiting, no invoices, no disputes
-
-## Payment Formula
-
-SolTier uses a transparent, performance-based formula:
-
-```
-Effective Views = Views + (Likes × Like Weight)
-Payout = (Effective Views / 1,000) × CPM Rate
-```
-
-**Example:**
-- Campaign CPM: $15
-- Like Weight: 20 (configurable by brand)
-- Your post gets: 10,000 views and 500 likes
-- Effective Views: 10,000 + (500 × 20) = 20,000
-- Your Payout: (20,000 / 1,000) × $15 = $300
-
-All calculations happen on-chain and are fully transparent.
-
-## Key Features
-
-### Blockchain-Powered Trust
-- Smart contract escrow holds campaign funds
-- Automatic payout execution based on verified metrics
-- No central authority controls payments
-- Fully auditable transaction history
-
-### Real Verification
-- OAuth 2.0 integration with Twitter API
-- Actual follower counts, not self-reported
-- Real-time metric tracking
-- Impossible to fake blockchain-recorded data
-
-### Instant Payments
-- Payouts settle in seconds via Solana
-- Standard SOL transfers
-- No international wire fees
-- Transaction costs under $0.01
-
-### Zero Platform Fees
-- No commission on campaigns
-- Only blockchain gas fees (fractions of a cent)
-- Brands get maximum ROI
-- Creators keep 100% of earnings
-
-### Complete Transparency
-- See exactly how payouts are calculated
-- Real-time campaign performance dashboards
-- All metrics verified and on-chain
-- No hidden fees or surprise deductions
-
-## Why Choose SolTier?
-
-### vs Traditional Platforms
-- **Save 20-40%** on platform commission fees
-- **Instant payments** instead of 30-90 day waits
-- **Verified metrics** instead of self-reported numbers
-- **No disputes** - smart contracts enforce agreements
-
-### vs Direct Creator Deals
-- **Performance guaranteed** by blockchain code
-- **No trust required** between parties
-- **Automated tracking** eliminates manual work
-- **Standardized terms** via smart contracts
-
-### vs Other Crypto Solutions
-- **Real social integration** with Twitter API
-- **Purpose-built** for influencer marketing
-- **Simple UX** - feels like Web2, powered by Web3
-- **Zero platform fees** - not just "lower" fees
-
-## Technology Stack
-
-Built with modern, scalable technology:
-
-**Blockchain:**
-- Solana for sub-second finality and low costs
-- Anchor framework for secure smart contracts
-- SPL Token standard for payments
-
-**Frontend:**
-- Next.js 16 with Turbopack for optimal performance
-- Solana Wallet Adapter for seamless Web3 integration
-- Real-time updates and responsive design
-
-**Backend:**
-- Node.js REST API for business logic
-- Twitter API v2 with OAuth 2.0
-- Real-time metrics synchronization
-
-## API Documentation
-
-SolTier provides a comprehensive REST API for integration:
-
-### Authentication Endpoints
-- User registration and wallet verification
-- Twitter OAuth connection
-- Session management
-
-### Campaign Management
-- Create and configure campaigns
-- Browse active opportunities
-- Track performance metrics
-- Manage applications
-
-### Metrics & Analytics
-- Real-time engagement tracking
-- Historical performance data
-- Payout calculations
-- Twitter metrics verification
-
-### Payment Operations
-- Escrow funding
-- Automatic settlement
-- Transaction history
-- Balance queries
-
-Full API documentation available for developers building on SolTier.
-
-## Security & Trust
-
-### Smart Contract Security
-- PDA-based escrow prevents unauthorized access
-- Monotonic metrics prevent manipulation
-- Automatic budget limits
-- Audited contract code
-
-### Data Protection
-- OAuth 2.0 for secure Twitter authentication
-- Wallet signatures for authorization
-- No sensitive data stored on servers
-- Environment variables encrypted
-
-### Payment Safety
-- Funds locked in blockchain escrow
-- Cannot be withdrawn by platform
-- Automatic release only on verified performance
-- Transparent on-chain verification
-
-## Use Cases
-
-### Perfect For Brands Who Want To:
-- Launch performance-based campaigns
-- Work with micro-influencers efficiently
-- Track ROI with precision
-- Eliminate payment fraud
-- Scale influencer marketing globally
-
-### Perfect For Creators Who Want To:
-- Get paid for actual performance
-- Access brand deals without minimums
-- Receive instant payment
-- Build verifiable reputation
-- Work with international brands easily
-
-### Ideal Campaign Types:
-- Product launches and awareness
-- App downloads and signups
-- Event promotions
-- Brand advocacy programs
-- Affiliate marketing with engagement focus
-
-## Market Impact
-
-SolTier transforms a $21 billion industry by:
-- Reducing fraud by 90%+ through verification
-- Eliminating 20-40% platform fees
-- Cutting payment time from weeks to seconds
-- Enabling global micro-influencer economy
-- Creating transparent, fair marketplace
-
-## Getting Started
-
-### For Brands
-Visit the platform and connect your Solana wallet. Add funds to your campaign wallet and create your first performance-based campaign in minutes.
-
-### For Creators
-Connect your Solana wallet and authenticate your Twitter account. Browse available campaigns and start earning based on your real reach.
-
-## Support & Resources
-
-For questions, integration support, or partnership inquiries, reference the PITCH.md document for detailed platform information and market positioning.
-
-## Open Source
-
-SolTier is built with transparency in mind. The smart contracts, API, and platform logic are designed to be auditable and trustworthy.
-
-## Future Roadmap
-
-Expanding beyond Twitter to create a comprehensive decentralized influencer marketing ecosystem:
-- Instagram and TikTok integration
-- YouTube campaign support
-- Advanced analytics and AI-powered matching
-- Creator reputation NFTs
-- Multi-campaign automation
-- Mobile applications
-
-## License
-
-MIT License - See LICENSE file for details.
+SolTier is a decentralized platform that connects brands with creators through transparent, performance-based compensation. Pay for real engagement. Get paid instantly. No intermediaries, no fraud, no delays.
 
 ---
 
-Built on Solana. Powered by real data. Designed for creators and brands who value transparency.
+## Why SolTier?
+
+The influencer marketing industry loses billions annually to fake metrics, payment disputes, and platform fees. SolTier solves this by putting everything on-chain.
+
+| Traditional Platforms | SolTier |
+|----------------------|---------|
+| 20-40% platform fees | Zero commission |
+| 30-90 day payment cycles | Instant payouts |
+| Self-reported metrics | Twitter API verification |
+| Trust-based agreements | Smart contract enforcement |
+| Manual dispute resolution | Automated settlements |
+
+---
+
+## How It Works
+
+### For Brands
+
+**1. Fund Your Campaign**  
+Deposit SOL into your campaign wallet. Funds are held in blockchain escrow until performance milestones are met.
+
+**2. Set Your Terms**  
+Define your CPM rate, budget cap, and engagement multipliers. Every parameter is transparent and on-chain.
+
+**3. Approve Creators**  
+Review applications from verified creators. See their real Twitter metrics before approving.
+
+**4. Pay for Results**  
+Creators are compensated automatically based on verified views and engagement. No manual processing required.
+
+### For Creators
+
+**1. Connect Your Accounts**  
+Link your Solana wallet and authenticate with Twitter. Your real metrics are verified instantly.
+
+**2. Find Campaigns**  
+Browse active campaigns from brands. See exactly how much you can earn based on your reach.
+
+**3. Create Content**  
+Post your content and submit the tweet URL. The system tracks performance automatically.
+
+**4. Get Paid Instantly**  
+Earnings are calculated in real-time and transferred directly to your wallet. No invoices, no waiting.
+
+---
+
+## The Payout Formula
+
+SolTier uses a transparent, performance-based calculation:
+
+```
+Effective Views = Views + (Likes × Like Weight)
+Payout = (Effective Views ÷ 1,000) × CPM Rate
+```
+
+**Example Calculation:**
+- CPM Rate: 0.01 SOL
+- Like Weight: 20x
+- Post Performance: 50,000 views, 2,500 likes
+- Effective Views: 50,000 + (2,500 × 20) = 100,000
+- Creator Earnings: 100 × 0.01 = 1.0 SOL
+
+All calculations are verifiable on-chain.
+
+---
+
+## Platform Features
+
+### Campaign Management
+- Create campaigns with custom CPM, duration, and budget
+- Real-time performance dashboards
+- Application review and creator approval workflow
+- Campaign cancellation with automatic refund
+
+### Creator Tools
+- Twitter OAuth for verified metrics
+- Campaign discovery and application
+- Tweet submission and tracking
+- Instant withdrawal to any Solana wallet
+
+### Security and Trust
+- Smart contract escrow for all campaign funds
+- Rate limiting and input validation
+- Twitter API verification for all metrics
+- Transparent transaction history
+
+---
+
+## Technology
+
+| Component | Stack |
+|-----------|-------|
+| Blockchain | Solana (Devnet/Mainnet) |
+| Smart Contracts | Anchor Framework, Rust |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS |
+| Backend | Node.js, Express |
+| Authentication | Solana Wallet Adapter, Twitter OAuth 2.0 |
+| Wallets Supported | Phantom, Solflare |
+
+---
+
+## Quick Start
+
+### Requirements
+- Node.js 20 or higher
+- Phantom or Solflare browser extension
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/shashwatraajsingh/SolTier.git
+cd SolTier
+
+# Install and run frontend
+cd reach-pay
+npm install
+npm run dev
+
+# Install and run backend (separate terminal)
+cd reachpay-solana/backend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Access the platform at `http://localhost:3000`
+
+---
+
+## Configuration
+
+### Backend Environment
+
+```bash
+NODE_ENV=development
+PORT=3001
+SOLANA_NETWORK=devnet
+
+# Twitter OAuth (required for creator verification)
+TWITTER_CLIENT_ID=your_client_id
+TWITTER_CLIENT_SECRET=your_client_secret
+TWITTER_CALLBACK_URL=http://localhost:3001/api/x/callback
+FRONTEND_URL=http://localhost:3000
+
+# Escrow wallet (required for real withdrawals)
+ESCROW_WALLET_SECRET_KEY=your_base58_encoded_key
+```
+
+### Frontend Environment
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+---
+
+## API Endpoints
+
+### Campaigns
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/campaign/create` | POST | Create new campaign |
+| `/api/campaign/:id/status` | GET | Get campaign details |
+| `/api/campaigns/active` | GET | List all active campaigns |
+| `/api/campaign/:id/apply` | POST | Apply to campaign |
+| `/api/campaign/:id/cancel` | POST | Cancel campaign |
+| `/api/campaign/:id/submit-tweet` | POST | Submit tweet for tracking |
+| `/api/campaign/:id/process-payout` | POST | Process creator payout |
+
+### Creators
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/creator/applications/:wallet` | GET | Get creator's applications |
+| `/api/creator/earnings/:wallet` | GET | Get earnings balance |
+| `/api/creator/withdraw` | POST | Withdraw to wallet |
+
+### Twitter Integration
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/x/connect` | POST | Start OAuth flow |
+| `/api/x/callback` | GET | OAuth callback |
+| `/api/x/metrics/:wallet` | GET | Get verified metrics |
+
+---
+
+## Deployment
+
+### Frontend
+Deploy to Vercel, Netlify, or any static hosting:
+```bash
+cd reach-pay
+npm run build
+```
+
+### Backend
+Deploy to Render, Railway, or any Node.js host:
+```bash
+cd reachpay-solana/backend
+npm start
+```
+
+### Production Checklist
+- Set `SOLANA_NETWORK=mainnet-beta` for production
+- Configure production Twitter OAuth callback URLs
+- Set up escrow wallet with sufficient SOL for withdrawals
+- Configure CORS for production domains
+
+---
+
+## Project Structure
+
+```
+SolTier/
+├── reach-pay/                    # Frontend Application
+│   ├── src/app/                  # Next.js pages
+│   ├── src/components/           # React components
+│   ├── src/lib/api.ts           # API client
+│   └── src/context/             # State management
+│
+├── reachpay-solana/
+│   ├── backend/                  # API Server
+│   │   ├── server.js            # Express application
+│   │   ├── persistentDatabase.js # Data persistence
+│   │   ├── twitterAuth.js       # OAuth service
+│   │   └── oracle.js            # Blockchain interface
+│   │
+│   └── programs/                 # Solana Programs
+│       └── soltier-solana/      # Smart contracts
+│
+└── .github/workflows/           # CI/CD pipeline
+```
+
+---
+
+## Support
+
+For technical issues, open an issue on GitHub.
+
+For partnership and business inquiries, contact through the repository.
+
+---
+
+## License
+
+MIT License
+
+---
+
+*SolTier - Transparent influencer marketing, powered by Solana.*
