@@ -18,7 +18,6 @@ import {
   getBrandCampaigns,
   getActiveCampaigns,
   getTopCreators,
-  getBalance,
   applyToCampaign,
   type Campaign,
   type Creator as CreatorType,

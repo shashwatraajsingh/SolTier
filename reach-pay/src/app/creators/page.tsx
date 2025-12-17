@@ -52,6 +52,24 @@ export default function CreatorsPage() {
 
                     {loading ? (
                         <PageLoader text="Loading creators..." />
+                    ) : error ? (
+                        <div className="text-center py-12 border-2 border-dashed border-red-300 rounded-lg bg-red-50">
+                            <p className="font-patrick text-xl text-red-500 mb-4">{error}</p>
+                            <button
+                                onClick={() => {
+                                    setLoading(true);
+                                    setError(null);
+                                    getTopCreators(20).then(data => {
+                                        setCreators(data);
+                                    }).catch(err => {
+                                        setError("Failed to load creators. Please try again.");
+                                    }).finally(() => setLoading(false));
+                                }}
+                                className="px-6 py-2 bg-black text-white font-patrick border-2 border-black hover:bg-gray-800"
+                            >
+                                Retry
+                            </button>
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {creators.length > 0 ? (
