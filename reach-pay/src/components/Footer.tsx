@@ -1,4 +1,4 @@
-import { Twitter, FileText } from 'lucide-react';
+import { Twitter, FileText, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Footer() {
@@ -12,6 +12,7 @@ export default function Footer() {
                 <div className="flex flex-wrap justify-center gap-6 text-gray-600">
                     <Link href="/docs" className="flex items-center gap-2 hover:text-black transition-colors"><FileText size={18} /> Docs</Link>
                     <Link href="/terms" className="hover:text-black transition-colors">Terms</Link>
+                    <Link href="/support" className="flex items-center gap-2 hover:text-pink-500 transition-colors"><Heart size={18} /> Support Us</Link>
                     <a href="https://x.com/SolTierD" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-black transition-colors"><Twitter size={18} /> Twitter</a>
                 </div>
             </div>
