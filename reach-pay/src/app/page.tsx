@@ -40,40 +40,49 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [brandWalletAddress, setBrandWalletAddress] = useState<string | null>(null);
 
-  // Register user and fetch data when wallet connects
+  // Initialize user and fetch dashboard data when wallet connects and role is set
   useEffect(() => {
-    if (connected && publicKey && userRole) {
-      initializeUser();
-    }
-  }, [connected, publicKey, userRole]);
+    const initializeAndFetchData = async () => {
+      if (!connected || !publicKey || !userRole) return;
 
-  // Fetch campaigns when role changes
-  useEffect(() => {
-    if (userRole && publicKey) {
-      fetchDashboardData();
-    }
-  }, [userRole, publicKey]);
+      setLoading(true);
+      try {
+        // Register user first
+        await registerUser(publicKey.toString(), userRole);
+        const user = await getUser(publicKey.toString());
 
-  const initializeUser = async () => {
-    if (!publicKey || !userRole) return;
+        // Set user-specific data
+        if (user.role === "creator") {
+          // Fetch X status and campaigns in parallel
+          const [xStatus, activeCampaigns] = await Promise.all([
+            getXStatus(publicKey.toString()),
+            getActiveCampaigns(),
+          ]);
+          setIsXConnected(xStatus.data.connected);
+          setXUsername(xStatus.data.username || "");
+          setCampaigns(activeCampaigns);
+        } else if (user.role === "brand") {
+          // Set brand wallet info from user data
+          setBrandWalletAddress(user.brandWalletAddress || null);
+          setBalance(user.brandBalance || 0);
 
-    try {
-      await registerUser(publicKey.toString(), userRole);
-      const user = await getUser(publicKey.toString());
-
-      if (user.role === "creator") {
-        const xStatus = await getXStatus(publicKey.toString());
-        setIsXConnected(xStatus.data.connected);
-        setXUsername(xStatus.data.username || "");
-      } else if (user.role === "brand") {
-        // Get brand wallet info
-        setBrandWalletAddress(user.brandWalletAddress || null);
-        setBalance(user.brandBalance || 0);
+          // Fetch campaigns and creators in parallel
+          const [brandCampaigns, topCreators] = await Promise.all([
+            getBrandCampaigns(publicKey.toString()),
+            getTopCreators(10),
+          ]);
+          setCampaigns(brandCampaigns);
+          setCreators(topCreators);
+        }
+      } catch (error) {
+        console.error("Failed to initialize user:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to initialize user:", error);
-    }
-  };
+    };
+
+    initializeAndFetchData();
+  }, [connected, publicKey, userRole]);
 
   const fetchDashboardData = async () => {
     if (!publicKey) return;
@@ -81,14 +90,17 @@ export default function Home() {
     setLoading(true);
     try {
       if (userRole === "brand") {
-        const brandCampaigns = await getBrandCampaigns(publicKey.toString());
+        // Parallel fetching for better performance
+        const [brandCampaigns, topCreators] = await Promise.all([
+          getBrandCampaigns(publicKey.toString()),
+          getTopCreators(10),
+        ]);
         setCampaigns(brandCampaigns);
-
-        const topCreators = await getTopCreators(10);
         setCreators(topCreators);
 
-        const bal = await getBalance(publicKey.toString());
-        setBalance(bal);
+        // Also refresh brand balance from user endpoint
+        const user = await getUser(publicKey.toString());
+        setBalance(user.brandBalance || 0);
       } else if (userRole === "creator") {
         const activeCampaigns = await getActiveCampaigns();
         setCampaigns(activeCampaigns);

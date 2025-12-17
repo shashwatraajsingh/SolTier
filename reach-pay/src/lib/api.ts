@@ -7,7 +7,50 @@ export const api = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
+    timeout: 15000, // 15 second timeout
 });
+
+// Request interceptor for debugging
+api.interceptors.request.use(
+    (config) => {
+        // Could add auth headers here if needed
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor for error handling and retry logic
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const config = error.config;
+
+        // Only retry on network errors or 5xx, max 2 retries
+        if (
+            !config._retry &&
+            config._retryCount === undefined &&
+            (error.code === 'ECONNABORTED' ||
+                error.code === 'ERR_NETWORK' ||
+                (error.response?.status >= 500 && error.response?.status < 600))
+        ) {
+            config._retryCount = 0;
+        }
+
+        if (config._retryCount !== undefined && config._retryCount < 2) {
+            config._retryCount += 1;
+            config._retry = true;
+
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, config._retryCount * 1000));
+
+            return api(config);
+        }
+
+        return Promise.reject(error);
+    }
+);
 
 // Types
 export interface Campaign {
