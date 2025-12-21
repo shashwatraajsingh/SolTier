@@ -1085,15 +1085,108 @@ app.post('/api/balance/add', asyncHandler(async (req, res) => {
     });
 }));
 
-// Get balance
+// Get balance - now fetches real blockchain balance
 app.get('/api/balance/:walletAddress', asyncHandler(async (req, res) => {
     const { walletAddress } = req.params;
-    const balance = db.getBalance(walletAddress);
+
+    // First try to get blockchain balance
+    let blockchainBalance = 0;
+    try {
+        const { PublicKey } = require('@solana/web3.js');
+        const pubkey = new PublicKey(walletAddress);
+
+        // Fetch real SOL balance from blockchain with timeout
+        const balancePromise = solanaConnection.getBalance(pubkey);
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Balance fetch timeout')), 5000)
+        );
+
+        const balance = await Promise.race([balancePromise, timeoutPromise]);
+        blockchainBalance = balance / 1e9; // Convert lamports to SOL
+        logger.debug(`Blockchain balance fetched: ${blockchainBalance} SOL for ${walletAddress}`);
+    } catch (error) {
+        logger.warn(`Failed to fetch blockchain balance for ${walletAddress}: ${error.message}`);
+        // Fall back to internal database balance
+        const dbBalance = db.getBalance(walletAddress);
+        blockchainBalance = dbBalance / 1e9;
+    }
 
     res.json({
         success: true,
         data: {
-            balance: balance / 1e9, // Use 1e9 for SOL consistency
+            balance: blockchainBalance,
+        },
+    });
+}));
+
+// Refresh brand wallet balance - specifically for brands to get real-time balance
+app.post('/api/balance/refresh/:walletAddress', asyncHandler(async (req, res) => {
+    const { walletAddress } = req.params;
+
+    const user = db.getUser(walletAddress);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            error: 'User not found',
+        });
+    }
+
+    // Get the brand wallet address if it's a brand user
+    let targetAddress = walletAddress;
+    if (user.role === 'brand') {
+        const brandWallet = db.getBrandWallet(walletAddress);
+        if (brandWallet) {
+            targetAddress = brandWallet.publicKey;
+        }
+    }
+
+    // Fetch real SOL balance from blockchain using multiple RPC endpoints
+    const rpcEndpoints = [
+        'https://api.devnet.solana.com',
+        'https://devnet.helius-rpc.com/?api-key=15319bf4-5b40-4958-ac8d-6313aa55eb92', // Free Helius devnet
+    ];
+
+    let blockchainBalance = 0;
+    let success = false;
+    let lastError = null;
+
+    for (const rpcEndpoint of rpcEndpoints) {
+        try {
+            const { Connection, PublicKey } = require('@solana/web3.js');
+            const tempConnection = new Connection(rpcEndpoint, 'confirmed');
+            const pubkey = new PublicKey(targetAddress);
+
+            const balancePromise = tempConnection.getBalance(pubkey);
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Balance fetch timeout')), 5000)
+            );
+
+            const balance = await Promise.race([balancePromise, timeoutPromise]);
+            blockchainBalance = balance / 1e9; // Convert lamports to SOL
+            success = true;
+            logger.info(`Balance refreshed from ${rpcEndpoint}: ${blockchainBalance} SOL for ${targetAddress}`);
+            break;
+        } catch (error) {
+            lastError = error;
+            logger.warn(`RPC ${rpcEndpoint} failed for ${targetAddress}: ${error.message}`);
+            continue;
+        }
+    }
+
+    if (!success) {
+        logger.error(`All RPC endpoints failed for ${targetAddress}: ${lastError?.message}`);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch balance from blockchain. Please try again.',
+        });
+    }
+
+    res.json({
+        success: true,
+        data: {
+            balance: blockchainBalance,
+            walletAddress: targetAddress,
+            refreshedAt: new Date().toISOString(),
         },
     });
 }));

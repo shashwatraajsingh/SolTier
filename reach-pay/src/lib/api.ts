@@ -342,6 +342,14 @@ export const getBalance = async (walletAddress: string): Promise<number> => {
     return response.data.data.balance;
 };
 
+// Refresh balance from blockchain - more reliable for real-time updates
+export const refreshBalance = async (walletAddress: string): Promise<{ balance: number; walletAddress: string; refreshedAt: string }> => {
+    const response = await api.post<{ success: boolean; data: { balance: number; walletAddress: string; refreshedAt: string } }>(
+        `/api/balance/refresh/${walletAddress}`
+    );
+    return response.data.data;
+};
+
 // ============= METRICS API =============
 
 export interface MetricsUpdate {

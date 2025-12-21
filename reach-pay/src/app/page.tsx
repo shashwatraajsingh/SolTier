@@ -19,6 +19,7 @@ import {
   getActiveCampaigns,
   getTopCreators,
   applyToCampaign,
+  refreshBalance,
   type Campaign,
   type Creator as CreatorType,
 } from "@/lib/api";
@@ -37,6 +38,7 @@ export default function Home() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [creators, setCreators] = useState<CreatorType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [brandWalletAddress, setBrandWalletAddress] = useState<string | null>(null);
 
   // Initialize user and fetch dashboard data when wallet connects and role is set
@@ -108,6 +110,30 @@ export default function Home() {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Dedicated balance refresh function that fetches directly from blockchain
+  const handleRefreshBalance = async () => {
+    if (!publicKey) return;
+
+    setRefreshing(true);
+    try {
+      const result = await refreshBalance(publicKey.toString());
+      setBalance(result.balance);
+      toast.success(`Balance updated: ${result.balance.toFixed(4)} SOL`);
+    } catch (error: any) {
+      console.error("Failed to refresh balance:", error);
+      // Fallback to user endpoint
+      try {
+        const user = await getUser(publicKey.toString());
+        setBalance(user.brandBalance || 0);
+        toast.success(`Balance: ${(user.brandBalance || 0).toFixed(4)} SOL`);
+      } catch (fallbackError) {
+        toast.error("Failed to refresh balance. Please try again.");
+      }
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -279,10 +305,11 @@ export default function Home() {
                                     <p className="text-2xl font-bold font-patrick">{balance.toFixed(4)} SOL</p>
                                   </div>
                                   <button
-                                    onClick={() => fetchDashboardData()}
-                                    className="px-4 py-2 bg-white border-2 border-black font-patrick text-sm hover:bg-gray-50"
+                                    onClick={handleRefreshBalance}
+                                    disabled={refreshing}
+                                    className={`px-4 py-2 bg-white border-2 border-black font-patrick text-sm hover:bg-gray-50 transition-all ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                   >
-                                    Refresh
+                                    {refreshing ? 'Refreshing...' : 'Refresh'}
                                   </button>
                                 </div>
                               </div>

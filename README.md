@@ -16,7 +16,7 @@ The influencer marketing industry loses billions annually to fake metrics, payme
 | 30-90 day payment cycles | Instant payouts |
 | Self-reported metrics | Twitter API verification |
 | Trust-based agreements | Smart contract enforcement |
-| Manual dispute resolution | Automated settlements |
+| Manual dispute resolution | Automated settlements |N
 
 ---
 
